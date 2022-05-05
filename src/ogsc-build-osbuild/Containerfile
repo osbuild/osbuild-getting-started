@@ -1,0 +1,30 @@
+FROM registry.fedoraproject.org/fedora-minimal:36
+
+RUN \
+    microdnf install -y \
+        git \
+        python-docutils \
+        make \
+        pkg-config \
+        rpm-build \
+        python3-setuptools \
+        python3-devel \
+        selinux-policy \
+        selinux-policy-devel \
+        systemd && \
+        microdnf clean all
+
+RUN \
+    mkdir /build
+
+ARG osbuild_version=main
+
+RUN \
+    git clone \
+        --branch ${osbuild_version} \
+        --depth 1 \
+        https://github.com/osbuild/osbuild \
+        /build/osbuild
+
+WORKDIR \
+    /build/osbuild

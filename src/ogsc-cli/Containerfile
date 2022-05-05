@@ -1,0 +1,8 @@
+FROM fedora:36
+
+ARG weldr_client_version=*
+
+RUN \
+    dnf in -y \
+        $(echo "/rpms/weldr-client-${weldr_client_version}-1.*.x86_64.rpm") && \
+        dnf clean all
