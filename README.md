@@ -90,11 +90,9 @@ argument.
 To build other things from the ecosystem the format is the same:
 
 ```
-make build-osbuild-composer osbuild_composer_version=v51
 make rpms-osbuild-composer osbuild_composer_version=v51
+make rpms-weldr-client weldr_client_version=v35
 ```
-
-Which will also place the RPMs in the `ogsc-rpms` volume.
 
 ## Run
 
