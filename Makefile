@@ -19,9 +19,13 @@ weldr_client_version_x=$(shell echo $(weldr_client_version) | sed -e s/v//g)
 setup-host:
 	./bin/setup-host.py container
 
+.PHONY: setup-share
+setup-share:
+	./bin/setup-share.py container
+
 .PHONY: build-osbuild 
 build-osbuild:
-	podman build \
+	podman image exists $(PREFIX_BUILD)-osbuild:$(osbuild_version) || podman build \
 		--build-arg osbuild_version=$(osbuild_version) \
 		-t $(PREFIX_BUILD)-osbuild:$(osbuild_version) \
 		src/ogsc-build-osbuild
@@ -36,7 +40,7 @@ rpms-osbuild: build-osbuild
 
 .PHONY: build-osbuild-composer
 build-osbuild-composer:
-	podman build \
+	podman image exists $(PREFIX_BUILD)-osbuild-composer:$(osbuild_composer_version) || podman build \
 		--build-arg osbuild_composer_version=$(osbuild_composer_version) \
 		-t $(PREFIX_BUILD)-osbuild-composer:$(osbuild_composer_version) \
 		src/ogsc-build-osbuild-composer
@@ -51,7 +55,7 @@ rpms-osbuild-composer: build-osbuild-composer
 
 .PHONY: build-weldr-client
 build-weldr-client:
-	podman build \
+	podman image exists $(PREFIX_BUILD)-weldr-client:$(weldr_client_version) || podman build \
 		--build-arg weldr_client_version=$(weldr_client_version) \
 		-t $(PREFIX_BUILD)-weldr-client:$(weldr_client_version) \
 		src/ogsc-build-weldr-client
@@ -91,15 +95,11 @@ ogsc-cli:
 		-t $(PREFIX_RUN)-cli:$(weldr_client_version_x) \
 		src/ogsc-cli
 
-.PHONY: share
-share:
-	echo "foo"
-
 .PHONY: quick
-quick: rpms-osbuild rpms-osbuild-composer rpms-weldr-client share ogsc-composer ogsc-worker ogsc-cli
+quick: rpms-osbuild rpms-osbuild-composer rpms-weldr-client ogsc-composer ogsc-worker ogsc-cli
 
 .PHONY: run
-run: quick
+run: setup-share quick
 	echo "hi"
 
 .PHONY: clean
