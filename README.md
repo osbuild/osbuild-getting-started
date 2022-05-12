@@ -62,12 +62,15 @@ has Docker on it (you can set this up through ``sudo make setup-host``).
 When the host system is set up it is time to build some RPMs, the steps are
 two-fold where a build container is created which we then later use to perform
 the build in. This allows you to inspect the build environment (but you don't
-*have* to):
+*have* to).
+
+By default `osbuild-getting-started` gets the latest tags from the upstream
+repositories but these can be overridden:
 
 
 ```
-make build-osbuild version=v55
-make rpms-osbuild version=v55
+make build-osbuild osbuild_version=v55
+make rpms-osbuild osbuild_version=v55
 ```
 
 The first incantation will check out the `v55` tag for osbuild and create a
@@ -87,8 +90,8 @@ argument.
 To build other things from the ecosystem the format is the same:
 
 ```
-make build-osbuild-composer version=v51
-make rpms-osbuild-composer version=v51
+make build-osbuild-composer osbuild_composer_version=v51
+make rpms-osbuild-composer osbuild_composer_version=v51
 ```
 
 Which will also place the RPMs in the `ogsc-rpms` volume.
