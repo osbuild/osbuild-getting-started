@@ -70,7 +70,7 @@ rpms-weldr-client: build-weldr-client
 
 .PHONY: ogsc-composer
 ogsc-composer:
-	podman build \
+	podman image exists $(PREFIX_RUN)-composer:$(osbuild_composer_version) || podman build \
 		--volume $(shell pwd)/build/rpms:/rpms:ro,Z \
 		--build-arg osbuild_composer_version=${osbuild_composer_version_x} \
 		-t $(PREFIX_RUN)-composer:$(osbuild_composer_version) \
@@ -78,7 +78,7 @@ ogsc-composer:
 
 .PHONY: ogsc-worker
 ogsc-worker:
-	podman build \
+	podman image exists $(PREFIX_RUN)-worker:$(osbuild_composer_version) || podman build \
 		--volume $(shell pwd)/build/rpms:/rpms:ro,Z \
 		--build-arg osbuild_composer_version=${osbuild_composer_version_x} \
 		-t $(PREFIX_RUN)-worker:$(osbuild_composer_version) \
@@ -86,7 +86,7 @@ ogsc-worker:
 
 .PHONY: ogsc-cli
 ogsc-cli:
-	podman build \
+	podman image exists $(PREFIX_RUN)-cli:$(weldr_client_version_x) || podman build \
 		--volume $(shell pwd)/build/rpms:/rpms:ro,Z \
 		--build-arg weldr_client_version=${weldr_client_version_x} \
 		-t $(PREFIX_RUN)-cli:$(weldr_client_version_x) \
