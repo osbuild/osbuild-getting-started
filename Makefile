@@ -86,10 +86,10 @@ ogsc-worker:
 
 .PHONY: ogsc-cli
 ogsc-cli:
-	podman image exists $(PREFIX_RUN)-cli:$(weldr_client_version_x) || podman build \
+	podman image exists $(PREFIX_RUN)-cli:$(weldr_client_version) || podman build \
 		--volume $(shell pwd)/build/rpms:/rpms:ro,Z \
 		--build-arg weldr_client_version=${weldr_client_version_x} \
-		-t $(PREFIX_RUN)-cli:$(weldr_client_version_x) \
+		-t $(PREFIX_RUN)-cli:$(weldr_client_version) \
 		src/ogsc-cli
 
 .PHONY: quick
