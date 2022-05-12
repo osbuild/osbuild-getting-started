@@ -32,7 +32,7 @@ build-osbuild:
 
 .PHONY: rpms-osbuild 
 rpms-osbuild: build-osbuild
-	podman run \
+	ls $(shell pwd)/build/rpms/osbuild-$(osbuild_version_x)-*.rpm || podman run \
 		--rm \
 		--volume $(shell pwd)/build/rpms/:/build/osbuild/rpmbuild/RPMS/noarch/:rw,Z \
 		$(PREFIX_BUILD)-osbuild:$(osbuild_version) \
@@ -47,7 +47,7 @@ build-osbuild-composer:
 
 .PHONY: rpms-osbuild-composer
 rpms-osbuild-composer: build-osbuild-composer
-	podman run \
+	ls $(shell pwd)/build/rpms/osbuild-composer-$(osbuild_composer_version_x)-* || podman run \
 		--rm \
 		--volume $(shell pwd)/build/rpms/:/build/osbuild-composer/rpmbuild/RPMS/x86_64/:rw,Z \
 		$(PREFIX_BUILD)-osbuild-composer:$(osbuild_composer_version) \
@@ -62,7 +62,7 @@ build-weldr-client:
 
 .PHONY: rpms-weldr-client
 rpms-weldr-client: build-weldr-client
-	podman run \
+	ls $(shell pwd)/build/rpms/weldr-client-$(weldr_client_version_x)-* || podman run \
 		--rm \
 		--volume $(shell pwd)/build/rpms/:/build/weldr-client/rpmbuild/RPMS/x86_64/:rw,Z \
 		$(PREFIX_BUILD)-weldr-client:$(weldr_client_version) \
@@ -70,7 +70,6 @@ rpms-weldr-client: build-weldr-client
 
 .PHONY: ogsc-composer
 ogsc-composer:
-	# XXX Dirty version hack for RPM version?
 	podman build \
 		--volume $(shell pwd)/build/rpms:/rpms:ro,Z \
 		--build-arg osbuild_composer_version=${osbuild_composer_version_x} \
@@ -79,7 +78,6 @@ ogsc-composer:
 
 .PHONY: ogsc-worker
 ogsc-worker:
-	# XXX Dirty version hack for RPM version?
 	podman build \
 		--volume $(shell pwd)/build/rpms:/rpms:ro,Z \
 		--build-arg osbuild_composer_version=${osbuild_composer_version_x} \
@@ -88,7 +86,6 @@ ogsc-worker:
 
 .PHONY: ogsc-cli
 ogsc-cli:
-	# XXX Dirty version hack for RPM version?
 	podman build \
 		--volume $(shell pwd)/build/rpms:/rpms:ro,Z \
 		--build-arg weldr_client_version=${weldr_client_version_x} \
