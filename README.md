@@ -75,7 +75,8 @@ make rpms-osbuild osbuild_version=v55
 
 The first incantation will check out the `v55` tag for osbuild and create a
 container with all build requirements satisfied. The second command will build
-the RPMs, these are available in `./build/rpms` afterwards.
+the RPMs, these are available in `./build/rpms` afterwards. Note that the first
+is a dependency of the second.
 
 ```
 € ls ./build/rpms/
