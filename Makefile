@@ -20,10 +20,6 @@ weldr_client_version_x=$(shell echo $(weldr_client_version) | sed -e s/v//g)
 setup-host:
 	./bin/setup-host.py container
 
-.PHONY: setup-share
-setup-share:
-	./bin/setup-share.py container
-
 .PHONY: build/osbuild 
 build/osbuild:
 	podman image exists $(PREFIX_BUILD)/osbuild:$(osbuild_version) || podman build \
@@ -106,7 +102,7 @@ run/cli:
 quick: rpms/osbuild rpms/osbuild-composer rpms/weldr-client config/osbuild-composer run/composer run/worker run/cli
 
 .PHONY: run
-run: setup-share quick
+run: config/osbuild-composer quick
 	echo "hi"
 
 .PHONY: clean
