@@ -8,6 +8,7 @@ import tempfile
 import subprocess
 import asyncio
 import logging
+import secrets
 
 from pathlib import Path
 
@@ -33,26 +34,81 @@ async def magic():
 
     log.debug("magic: starting up")
 
+    prefix = secrets.token_hex(2)
+
     path_config = Path.cwd() / "build/config"
 
     with tempfile.TemporaryDirectory() as path_tmp:
         os.mkdir(f"{path_tmp}/weldr")
         os.mkdir(f"{path_tmp}/dnf-json")
 
-        proc = await asyncio.create_subprocess_exec(
+        composer = await asyncio.create_subprocess_exec(
             "podman",
             "run",
             "--volume", f"{path_config}:/etc/osbuild-composer:ro,Z",
             "--volume", f"{path_tmp}/weldr:/run/weldr:rw,Z",
             "--volume", f"{path_tmp}/dnf-json:/run/osbuild-dnf-json:rw,Z",
+            "--network", "podman",
+            "--name", f"{prefix}-composer",
             "ogsc/run/composer:v53",
             "--dnf-json",
             "--weldr-api",
             "--remote-worker-api",
             "--composer-api",
-            "--composer-api-port", "8000"
+            "--composer-api-port", "8000",
+            stdout=asyncio.subprocess.PIPE,
+            stderr=asyncio.subprocess.PIPE,
         )
-        await proc.wait()
+
+        # XXX: silly stuff :)
+        await asyncio.sleep(5)
+
+        composer_inspect = await asyncio.create_subprocess_exec(
+            "podman",
+            "inspect",
+            f"{prefix}-composer",
+            "-f", "{{ .NetworkSettings.IPAddress }}",
+            stdout=asyncio.subprocess.PIPE,
+            stderr=asyncio.subprocess.PIPE,
+        )
+        composer_ip = (await composer_inspect.stdout.readline()).decode().strip()
+        await composer_inspect.wait()
+
+        worker = await asyncio.create_subprocess_exec(
+            "podman",
+            "run",
+            "--volume", f"{path_config}:/etc/osbuild-composer:ro,Z",
+            "--volume", f"{path_tmp}/weldr:/run/weldr:rw,Z",
+            "--volume", f"{path_tmp}/dnf-json:/run/osbuild-dnf-json:rw,Z",
+            "--network", "podman",
+            "--add-host", f"composer:{composer_ip}",
+            "--name", f"{prefix}-worker",
+            "--env", "CACHE_DIRECTORY=/var/cache/osbuild-worker",
+            "ogsc/run/worker:v53",
+            f"composer:8700",
+            stdout=asyncio.subprocess.PIPE,
+            stderr=asyncio.subprocess.PIPE,
+        )
+
+        await asyncio.sleep(5)
+
+        cli = await asyncio.create_subprocess_exec(
+            "podman",
+            "run",
+            "--volume", f"{path_config}:/etc/osbuild-composer:ro,Z",
+            "--volume", f"{path_tmp}/weldr:/run/weldr:rw,Z",
+            "--volume", f"{path_tmp}/dnf-json:/run/osbuild-dnf-json:rw,Z",
+            "--network", "podman",
+            "--add-host", f"composer:{composer_ip}",
+            "--name", f"{prefix}-cli",
+            "ogsc/run/cli:v35.5",
+            "composer-cli", "status", "show"
+        )
+
+        await asyncio.gather(
+            composer.wait(),
+            worker.wait()
+        )
 
     return 0
 
