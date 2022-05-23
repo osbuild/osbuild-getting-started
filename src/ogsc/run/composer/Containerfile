@@ -18,4 +18,4 @@ COPY \
 RUN \
     mkdir -p /var/lib/osbuild-composer/
 
-ENTRYPOINT ["python3", "/opt/entrypoint.py", "--remote-worker-api", "--composer-api"]
+ENTRYPOINT ["python3", "/opt/entrypoint.py"]

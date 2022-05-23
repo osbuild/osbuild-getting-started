@@ -3,6 +3,8 @@
 """This file is part of the `osbuild-getting-started` project and is an ad-hoc
 implementation of docker-compose, but without the docker-compose."""
 
+import os
+import tempfile
 import subprocess
 import asyncio
 import logging
@@ -33,13 +35,24 @@ async def magic():
 
     path_config = Path.cwd() / "build/config"
 
-    proc = await asyncio.create_subprocess_exec(
-        "podman",
-        "run",
-        "--volume", f"{path_config}:/etc/osbuild-composer:ro,Z",
-        "ogsc/run/composer:v53",
-    )
-    await proc.wait()
+    with tempfile.TemporaryDirectory() as path_tmp:
+        os.mkdir(f"{path_tmp}/weldr")
+        os.mkdir(f"{path_tmp}/dnf-json")
+
+        proc = await asyncio.create_subprocess_exec(
+            "podman",
+            "run",
+            "--volume", f"{path_config}:/etc/osbuild-composer:ro,Z",
+            "--volume", f"{path_tmp}/weldr:/run/weldr:rw,Z",
+            "--volume", f"{path_tmp}/dnf-json:/run/osbuild-dnf-json:rw,Z",
+            "ogsc/run/composer:v53",
+            "--dnf-json",
+            "--weldr-api",
+            "--remote-worker-api",
+            "--composer-api",
+            "--composer-api-port", "8000"
+        )
+        await proc.wait()
 
     return 0
 
