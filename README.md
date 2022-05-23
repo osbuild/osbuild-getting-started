@@ -69,8 +69,8 @@ repositories but these can be overridden:
 
 
 ```
-make build-osbuild osbuild_version=v55
-make rpms-osbuild osbuild_version=v55
+make build/osbuild osbuild_version=v55
+make rpms/osbuild osbuild_version=v55
 ```
 
 The first incantation will check out the `v55` tag for osbuild and create a
@@ -91,8 +91,8 @@ argument.
 To build other things from the ecosystem the format is the same:
 
 ```
-make rpms-osbuild-composer osbuild_composer_version=v51
-make rpms-weldr-client weldr_client_version=v35
+make rpms/osbuild-composer osbuild_composer_version=v51
+make rpms/weldr-client weldr_client_version=v35
 ```
 
 ## Run
