@@ -3,6 +3,7 @@ FROM registry.fedoraproject.org/fedora:36
 RUN \
     dnf install -y \
         git \
+        openssl \
         python-docutils \
         make \
         pkg-config \

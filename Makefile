@@ -6,6 +6,7 @@
 PREFIX=ogsc
 PREFIX_BUILD=$(PREFIX)/build
 PREFIX_RUN=$(PREFIX)/run
+PREFIX_GENERATE=$(PREFIX)/generate
 
 osbuild_version=$(shell git -c 'versionsort.suffix=-' ls-remote --tags --sort='v:refname' https://github.com/osbuild/osbuild | tail -n1 | cut -d/ -f3 | cut -d^ -f1)
 osbuild_composer_version=$(shell git -c 'versionsort.suffix=-' ls-remote --tags --sort='v:refname' https://github.com/osbuild/osbuild-composer | tail -n1 | cut -d/ -f3 | cut -d^ -f1)
@@ -53,6 +54,15 @@ rpms/osbuild-composer: build/osbuild-composer
 		$(PREFIX_BUILD)/osbuild-composer:$(osbuild_composer_version) \
 		make scratch
 
+.PHONY: config/osbuild-composer
+config/osbuild-composer: build/osbuild-composer
+	podman run \
+		--rm \
+		--volume $(shell pwd)/build/rpms/:/build/osbuild-composer/rpmbuild/RPMS/x86_64/:rw,Z \
+		--volume $(shell pwd)/build/config/:/build/config/:rw,Z \
+		$(PREFIX_BUILD)/osbuild-composer:$(osbuild_composer_version) \
+		bash -c './tools/gen-certs.sh ./test/data/x509/openssl.cnf /build/config /build/config/ca && cp ./test/data/composer/osbuild-composer.toml /build/config && cp ./test/data/worker/osbuild-worker.toml /build/config && cp -r ./repositories /build/config'
+
 .PHONY: build/weldr-client
 build/weldr-client:
 	podman image exists $(PREFIX_BUILD)/weldr-client:$(weldr_client_version) || podman build \
@@ -93,7 +103,7 @@ run/cli:
 		src/ogsc/run/cli
 
 .PHONY: quick
-quick: rpms/osbuild rpms/osbuild-composer rpms/weldr-client run/composer run/worker run/cli
+quick: rpms/osbuild rpms/osbuild-composer rpms/weldr-client config/osbuild-composer run/composer run/worker run/cli
 
 .PHONY: run
 run: setup-share quick
