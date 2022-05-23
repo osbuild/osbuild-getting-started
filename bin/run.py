@@ -45,6 +45,7 @@ async def magic():
         composer = await asyncio.create_subprocess_exec(
             "podman",
             "run",
+            "--rm",
             "--volume", f"{path_config}:/etc/osbuild-composer:ro,Z",
             "--volume", f"{path_tmp}/weldr:/run/weldr:rw,Z",
             "--volume", f"{path_tmp}/dnf-json:/run/osbuild-dnf-json:rw,Z",
@@ -77,6 +78,7 @@ async def magic():
         worker = await asyncio.create_subprocess_exec(
             "podman",
             "run",
+            "--rm",
             "--volume", f"{path_config}:/etc/osbuild-composer:ro,Z",
             "--volume", f"{path_tmp}/weldr:/run/weldr:rw,Z",
             "--volume", f"{path_tmp}/dnf-json:/run/osbuild-dnf-json:rw,Z",
@@ -95,6 +97,7 @@ async def magic():
         cli = await asyncio.create_subprocess_exec(
             "podman",
             "run",
+            "--rm",
             "--volume", f"{path_config}:/etc/osbuild-composer:ro,Z",
             "--volume", f"{path_tmp}/weldr:/run/weldr:rw,Z",
             "--volume", f"{path_tmp}/dnf-json:/run/osbuild-dnf-json:rw,Z",
