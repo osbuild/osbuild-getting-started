@@ -101,9 +101,14 @@ async def magic():
             "--network", "podman",
             "--add-host", f"composer:{composer_ip}",
             "--name", f"{prefix}-cli",
+            "-it",
             "ogsc/run/cli:v35.5",
-            "composer-cli", "status", "show"
+            "/bin/bash",
         )
+
+        await cli.wait()
+
+        print("exiting!")
 
         await asyncio.gather(
             composer.wait(),

@@ -103,7 +103,7 @@ quick: rpms/osbuild rpms/osbuild-composer rpms/weldr-client config/osbuild-compo
 
 .PHONY: run
 run: config/osbuild-composer quick
-	echo "hi"
+	./bin/run.py
 
 .PHONY: clean
 clean:
