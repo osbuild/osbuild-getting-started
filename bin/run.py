@@ -108,12 +108,19 @@ async def magic():
 
         await cli.wait()
 
-        print("exiting!")
+        composer.terminate()
 
-        await asyncio.gather(
-            composer.wait(),
-            worker.wait()
-        )
+        try:
+            await asyncio.wait_for(composer.wait(), timeout=1.0)
+        except asyncio.TimeoutError:
+            composer.kill()
+
+        worker.terminate()
+
+        try:
+            await asyncio.wait_for(worker.wait(), timeout=1.0)
+        except asyncio.TimeoutError:
+            worker.kill()
 
     return 0
 
