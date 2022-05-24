@@ -50,9 +50,10 @@ You should be all set with the following which drops you into the
 `composer-cli` where you can build an image or play around:
 
 ```
-sudo make setup-host  # requires sudo, installs host packages
-make run
-# some time passes (maybe a lot of time)
+user@desktopa osbuild-getting-started € sudo make setup-host  # requires sudo, installs host packages
+# ...
+user@desktopa osbuild-getting-started € make run
+# ... some time passes (maybe a lot of time)
 [root@b3bc0e0e777e composer]# composer-cli status show
 API server status:
 Database version:   0
