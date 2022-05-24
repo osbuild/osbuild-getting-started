@@ -53,7 +53,7 @@ You should be all set with the following which drops you into the
 sudo make setup-host  # requires sudo, installs host packages
 make run
 # some time passes (maybe a lot of time)
-[root@b3bc0e0e777e /]# composer-cli status show
+[root@b3bc0e0e777e composer]# composer-cli status show
 API server status:
 Database version:   0
 Database supported: true
@@ -61,6 +61,9 @@ Schema version:     0
 API version:        1
 Backend:            osbuild-composer
 Build:              git-rev:752938289087b816c756e48566a1f5f7e8aea2d2
+[root@b3bc0e0e777e composer]# composer-cli blueprints push data/blueprint.toml
+[root@b3bc0e0e777e composer]# composer-cli compose start example-image qcow2
+ERROR: DepsolveError: Post "http://unix": dial unix /run/osbuild-dnf-json/api.sock: connect: permission denied
 ```
 
 ## Build
