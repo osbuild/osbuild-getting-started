@@ -3,6 +3,7 @@
 """This file is part of the `osbuild-getting-started` project and is an ad-hoc
 implementation of docker-compose, but without the docker-compose."""
 
+import sys
 import os
 import tempfile
 import subprocess
@@ -28,7 +29,18 @@ def ensure():
     ])
 
 
-async def magic():
+async def stop(process, timeout=1.0):
+    try:
+        await asyncio.wait_for(process.wait(), timeout=1.0)
+    except asyncio.TimeoutError:
+        process.kill()
+
+
+async def magic(
+    osbuild_version,
+    osbuild_composer_version,
+    weldr_client_version
+):
     """Run all the containers required, in the correct order, with the
     appropriate amount of magical incantations."""
 
@@ -51,7 +63,7 @@ async def magic():
             "--volume", f"{path_tmp}/dnf-json:/run/osbuild-dnf-json:rw,Z",
             "--network", "podman",
             "--name", f"{prefix}-composer",
-            "ogsc/run/composer:v53",
+            f"ogsc/run/composer:{osbuild_composer_version}",
             "--dnf-json",
             "--weldr-api",
             "--remote-worker-api",
@@ -86,7 +98,7 @@ async def magic():
             "--add-host", f"composer:{composer_ip}",
             "--name", f"{prefix}-worker",
             "--env", "CACHE_DIRECTORY=/var/cache/osbuild-worker",
-            "ogsc/run/worker:v53",
+            f"ogsc/run/worker:{osbuild_version}",
             f"composer:8700",
             stdout=asyncio.subprocess.PIPE,
             stderr=asyncio.subprocess.PIPE,
@@ -105,27 +117,19 @@ async def magic():
             "--add-host", f"composer:{composer_ip}",
             "--name", f"{prefix}-cli",
             "-it",
-            "ogsc/run/cli:v35.5",
+            f"ogsc/run/cli:{weldr_client_version}",
             "/bin/bash",
         )
 
         await cli.wait()
 
-        composer.terminate()
-
-        try:
-            await asyncio.wait_for(composer.wait(), timeout=1.0)
-        except asyncio.TimeoutError:
-            composer.kill()
-
-        worker.terminate()
-
-        try:
-            await asyncio.wait_for(worker.wait(), timeout=1.0)
-        except asyncio.TimeoutError:
-            worker.kill()
+        await asyncio.gather(stop(composer), stop(worker))
 
     return 0
+
+
+def usage():
+    print("wrong!")
 
 
 def main():
@@ -133,13 +137,19 @@ def main():
 
     log.debug("main: starting up")
 
+    try:
+        osbuild_version, osbuild_composer_version, weldr_client_version = sys.argv[1:]
+    except:
+        usage()
+        return 1
+
     if not ensure():
         log.critical(
             "main: missing required files, did you run `make quick` yet?")
 
         return 1
 
-    return asyncio.run(magic())
+    return asyncio.run(magic(osbuild_version, osbuild_composer_version, weldr_client_version))
 
 
 if __name__ == "__main__":
