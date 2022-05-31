@@ -8,19 +8,13 @@ import os
 import tempfile
 import subprocess
 import asyncio
-import logging
 import secrets
 
 from pathlib import Path
 
 
-log = logging.getLogger(__name__)
-
-
 def ensure():
     """Ensure all prerequisites for running the containers exist."""
-
-    log.debug("ensure: testing file paths")
 
     # TODO: add all required file paths
     return all([
@@ -44,8 +38,6 @@ async def env(
     """Run all the containers required, in the correct order, with the
     appropriate amount of magical incantations."""
 
-    log.debug("env: starting up")
-
     prefix = secrets.token_hex(2)
 
     path_config = Path.cwd() / "build/config"
@@ -54,7 +46,7 @@ async def env(
         os.mkdir(f"{path_tmp}/weldr")
         os.mkdir(f"{path_tmp}/dnf-json")
 
-        log.info("env: starting `composer` container at %r", osbuild_composer_version)
+        print(f"run.py: env: starting `composer` container at {osbuild_composer_version!r}")
 
         composer = await asyncio.create_subprocess_exec(
             "podman",
@@ -89,8 +81,8 @@ async def env(
         composer_ip = (await composer_inspect.stdout.readline()).decode().strip()
         await composer_inspect.wait()
 
-        log.info("env: `composer` container has ip %r", composer_ip)
-        log.info("env: starting `worker` container at %r", osbuild_composer_version)
+        print(f"run.py: env: `composer` container has ip {composer_ip!r}")
+        print(f"run.py: env: starting `worker` container at {osbuild_composer_version!r}")
 
         worker = await asyncio.create_subprocess_exec(
             "podman",
@@ -113,7 +105,8 @@ async def env(
         )
         await asyncio.sleep(5)
 
-        log.info("env: starting `cli` container at %r", weldr_client_version)
+        print(f"run.py: env: starting `cli` container at {weldr_client_version!r}")
+
         cli = await asyncio.create_subprocess_exec(
             "podman",
             "run",
@@ -141,10 +134,6 @@ def usage():
 
 
 def main():
-    logging.basicConfig(level=logging.INFO)
-
-    log.debug("main: starting up")
-
     try:
         osbuild_version, osbuild_composer_version, weldr_client_version = sys.argv[1:]
     except:
@@ -152,8 +141,7 @@ def main():
         return 1
 
     if not ensure():
-        log.critical(
-            "main: missing required files, did you run `make quick` yet?")
+        print("run.py: main: missing required files, did you run `make quick` yet?")
 
         return 1
 

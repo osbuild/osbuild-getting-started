@@ -22,6 +22,7 @@ setup-host:
 
 .PHONY: build/osbuild 
 build/osbuild:
+	@echo "Makefile: build/osbuild: creating $(PREFIX_BUILD)/osbuild:$(osbuild_version)"
 	@podman build \
 		--build-arg osbuild_version=$(osbuild_version) \
 		-t $(PREFIX_BUILD)/osbuild:$(osbuild_version) \
@@ -29,6 +30,7 @@ build/osbuild:
 
 .PHONY: rpms/osbuild 
 rpms/osbuild: build/osbuild
+	@echo "Makefile: rpms/osbuild: creating rpms for osbuild ${osbuild_version}"
 	@ls $(shell pwd)/build/rpms/osbuild-$(osbuild_version_x)-*.rpm > /dev/null || podman run \
 		--rm \
 		--volume $(shell pwd)/build/rpms/:/build/osbuild/rpmbuild/RPMS/noarch/:rw,Z \
@@ -37,6 +39,7 @@ rpms/osbuild: build/osbuild
 
 .PHONY: build/osbuild-composer
 build/osbuild-composer:
+	@echo "Makefile: build/osbuild-composer: creating $(PREFIX_BUILD)/osbuild-composer:$(osbuild_composer_version)"
 	@podman build \
 		--build-arg osbuild_composer_version=$(osbuild_composer_version) \
 		-t $(PREFIX_BUILD)/osbuild-composer:$(osbuild_composer_version) \
@@ -44,6 +47,7 @@ build/osbuild-composer:
 
 .PHONY: rpms/osbuild-composer
 rpms/osbuild-composer: build/osbuild-composer
+	@echo "Makefile: rpms/osbuild-composer: creating rpms for osbuild-composer ${osbuild_composer_version}"
 	@ls $(shell pwd)/build/rpms/osbuild-composer-$(osbuild_composer_version_x)-* > /dev/null || podman run \
 		--rm \
 		--volume $(shell pwd)/build/rpms/:/build/osbuild-composer/rpmbuild/RPMS/x86_64/:rw,Z \
@@ -61,6 +65,7 @@ config/osbuild-composer: build/osbuild-composer
 
 .PHONY: build/weldr-client
 build/weldr-client:
+	@echo "Makefile: build/weldr-client: creating $(PREFIX_BUILD)/weldr-client:$(weldr_client_version)"
 	@podman build \
 		--build-arg weldr_client_version=$(weldr_client_version) \
 		-t $(PREFIX_BUILD)/weldr-client:$(weldr_client_version) \
@@ -68,6 +73,7 @@ build/weldr-client:
 
 .PHONY: rpms/weldr-client
 rpms/weldr-client: build/weldr-client
+	@echo "Makefile: rpms/weldr-client: creating rpms for weldr-client $(weldr_client_version)"
 	@ls $(shell pwd)/build/rpms/weldr-client-$(weldr_client_version_x)-* > /dev/null || podman run \
 		--rm \
 		--volume $(shell pwd)/build/rpms/:/build/weldr-client/rpmbuild/RPMS/x86_64/:rw,Z \
@@ -76,6 +82,7 @@ rpms/weldr-client: build/weldr-client
 
 .PHONY: run/composer
 run/composer:
+	@echo "Makefile: run/composer: creating $(PREFIX_RUN)/composer:$(osbuild_composer_version)"
 	@podman build \
 		--volume $(shell pwd)/build/rpms:/rpms:ro,Z \
 		--build-arg osbuild_composer_version=${osbuild_composer_version_x} \
@@ -84,6 +91,7 @@ run/composer:
 
 .PHONY: run/worker
 run/worker:
+	@echo "Makefile: run/worker: creating $(PREFIX_RUN)/worker:$(osbuild_composer_version)"
 	@podman build \
 		--volume $(shell pwd)/build/rpms:/rpms:ro,Z \
 		--build-arg osbuild_composer_version=${osbuild_composer_version_x} \
@@ -93,6 +101,7 @@ run/worker:
 
 .PHONY: run/cli
 run/cli:
+	@echo "Makefile: run/cli: creating $(PREFIX_RUN)/cli:$(weldr_client_version)"
 	@podman build \
 		--volume $(shell pwd)/build/rpms:/rpms:ro,Z \
 		--build-arg weldr_client_version=${weldr_client_version_x} \
