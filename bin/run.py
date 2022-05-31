@@ -98,12 +98,12 @@ async def magic(
             "--add-host", f"composer:{composer_ip}",
             "--name", f"{prefix}-worker",
             "--env", "CACHE_DIRECTORY=/var/cache/osbuild-worker",
-            f"ogsc/run/worker:{osbuild_version}",
+            f"ogsc/run/worker:{osbuild_composer_version}",
+            "/usr/libexec/osbuild-composer/osbuild-worker",
             f"composer:8700",
             stdout=asyncio.subprocess.PIPE,
             stderr=asyncio.subprocess.PIPE,
         )
-
         await asyncio.sleep(5)
 
         cli = await asyncio.create_subprocess_exec(
