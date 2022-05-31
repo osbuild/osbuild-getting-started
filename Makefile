@@ -108,5 +108,10 @@ run: config/osbuild-composer quick
 
 .PHONY: clean
 clean:
-	podman image rm -f $(shell podman image ls "ogsc*" -q)
+	podman image rm -f $(shell podman image ls "ogsc/build/osbuild" -q)
+	podman image rm -f $(shell podman image ls "ogsc/build/osbuild-composer" -q)
+	podman image rm -f $(shell podman image ls "ogsc/build/weldr-client" -q)
+	podman image rm -f $(shell podman image ls "ogsc/run/composer" -q)
+	podman image rm -f $(shell podman image ls "ogsc/run/worker" -q)
+	podman image rm -f $(shell podman image ls "ogsc/run/cli" -q)
 	rm $(shell pwd)/build/rpms/*.rpm
