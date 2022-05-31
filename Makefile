@@ -22,7 +22,7 @@ setup-host:
 
 .PHONY: build/osbuild 
 build/osbuild:
-	podman image exists $(PREFIX_BUILD)/osbuild:$(osbuild_version) || podman build \
+	podman build \
 		--build-arg osbuild_version=$(osbuild_version) \
 		-t $(PREFIX_BUILD)/osbuild:$(osbuild_version) \
 		src/ogsc/build/osbuild
@@ -37,7 +37,7 @@ rpms/osbuild: build/osbuild
 
 .PHONY: build/osbuild-composer
 build/osbuild-composer:
-	podman image exists $(PREFIX_BUILD)/osbuild-composer:$(osbuild_composer_version) || podman build \
+	podman build \
 		--build-arg osbuild_composer_version=$(osbuild_composer_version) \
 		-t $(PREFIX_BUILD)/osbuild-composer:$(osbuild_composer_version) \
 		src/ogsc/build/osbuild-composer
@@ -61,7 +61,7 @@ config/osbuild-composer: build/osbuild-composer
 
 .PHONY: build/weldr-client
 build/weldr-client:
-	podman image exists $(PREFIX_BUILD)/weldr-client:$(weldr_client_version) || podman build \
+	podman build \
 		--build-arg weldr_client_version=$(weldr_client_version) \
 		-t $(PREFIX_BUILD)/weldr-client:$(weldr_client_version) \
 		src/ogsc/build/weldr-client
@@ -76,7 +76,7 @@ rpms/weldr-client: build/weldr-client
 
 .PHONY: run/composer
 run/composer:
-	podman image exists $(PREFIX_RUN)/composer:$(osbuild_composer_version) || podman build \
+	podman build \
 		--volume $(shell pwd)/build/rpms:/rpms:ro,Z \
 		--build-arg osbuild_composer_version=${osbuild_composer_version_x} \
 		-t $(PREFIX_RUN)/composer:$(osbuild_composer_version) \
@@ -84,7 +84,7 @@ run/composer:
 
 .PHONY: run/worker
 run/worker:
-	podman image exists $(PREFIX_RUN)/worker:$(osbuild_composer_version) || podman build \
+	podman build \
 		--volume $(shell pwd)/build/rpms:/rpms:ro,Z \
 		--build-arg osbuild_composer_version=${osbuild_composer_version_x} \
 		--build-arg osbuild_version=${osbuild_version_x} \
@@ -93,7 +93,7 @@ run/worker:
 
 .PHONY: run/cli
 run/cli:
-	podman image exists $(PREFIX_RUN)/cli:$(weldr_client_version) || podman build \
+	podman build \
 		--volume $(shell pwd)/build/rpms:/rpms:ro,Z \
 		--build-arg weldr_client_version=${weldr_client_version_x} \
 		-t $(PREFIX_RUN)/cli:$(weldr_client_version) \
