@@ -25,6 +25,7 @@ def ensure():
 
 async def stop(process, timeout=5.0):
     try:
+        process.terminate()
         await asyncio.wait_for(process.wait(), timeout=timeout)
     except asyncio.TimeoutError:
         process.kill()
