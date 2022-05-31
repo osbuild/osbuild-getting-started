@@ -36,7 +36,7 @@ async def stop(process, timeout=5.0):
         process.kill()
 
 
-async def magic(
+async def env(
     osbuild_version,
     osbuild_composer_version,
     weldr_client_version
@@ -44,7 +44,7 @@ async def magic(
     """Run all the containers required, in the correct order, with the
     appropriate amount of magical incantations."""
 
-    log.debug("magic: starting up")
+    log.debug("env: starting up")
 
     prefix = secrets.token_hex(2)
 
@@ -53,6 +53,8 @@ async def magic(
     with tempfile.TemporaryDirectory() as path_tmp:
         os.mkdir(f"{path_tmp}/weldr")
         os.mkdir(f"{path_tmp}/dnf-json")
+
+        log.info("env: starting `composer` container at %r", osbuild_composer_version)
 
         composer = await asyncio.create_subprocess_exec(
             "podman",
@@ -87,6 +89,9 @@ async def magic(
         composer_ip = (await composer_inspect.stdout.readline()).decode().strip()
         await composer_inspect.wait()
 
+        log.info("env: `composer` container has ip %r", composer_ip)
+        log.info("env: starting `worker` container at %r", osbuild_composer_version)
+
         worker = await asyncio.create_subprocess_exec(
             "podman",
             "run",
@@ -108,6 +113,7 @@ async def magic(
         )
         await asyncio.sleep(5)
 
+        log.info("env: starting `cli` container at %r", weldr_client_version)
         cli = await asyncio.create_subprocess_exec(
             "podman",
             "run",
@@ -135,7 +141,7 @@ def usage():
 
 
 def main():
-    logging.basicConfig(level=logging.DEBUG)
+    logging.basicConfig(level=logging.INFO)
 
     log.debug("main: starting up")
 
@@ -151,7 +157,7 @@ def main():
 
         return 1
 
-    return asyncio.run(magic(osbuild_version, osbuild_composer_version, weldr_client_version))
+    return asyncio.run(env(osbuild_version, osbuild_composer_version, weldr_client_version))
 
 
 if __name__ == "__main__":
