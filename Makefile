@@ -91,12 +91,12 @@ run/composer:
 
 .PHONY: run/worker
 run/worker:
-	@echo "Makefile: run/worker: creating $(PREFIX_RUN)/worker:$(osbuild_composer_version)"
+	@echo "Makefile: run/worker: creating $(PREFIX_RUN)/worker:$(osbuild_composer_version)_$(osbuild_version)"
 	@podman build \
 		--volume $(shell pwd)/build/rpms:/rpms:ro,Z \
 		--build-arg osbuild_composer_version=${osbuild_composer_version_x} \
 		--build-arg osbuild_version=${osbuild_version_x} \
-		-t $(PREFIX_RUN)/worker:$(osbuild_composer_version) \
+		-t $(PREFIX_RUN)/worker:$(osbuild_composer_version)_$(osbuild_version) \
 		src/ogsc/run/worker 2>&1 > /dev/null
 
 .PHONY: run/cli

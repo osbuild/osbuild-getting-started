@@ -83,7 +83,7 @@ async def env(
         await composer_inspect.wait()
 
         print(f"run.py: env: `composer` container has ip {composer_ip!r}")
-        print(f"run.py: env: starting `worker` container at {osbuild_composer_version!r}")
+        print(f"run.py: env: starting `worker` container at {osbuild_composer_version!r}/{osbuild_version!r}")
 
         worker = await asyncio.create_subprocess_exec(
             "podman",
@@ -99,7 +99,7 @@ async def env(
             "--add-host", f"composer:{composer_ip}",
             "--name", f"{prefix}-worker",
             "--env", "CACHE_DIRECTORY=/var/cache/osbuild-worker",
-            f"ogsc/run/worker:{osbuild_composer_version}",
+            f"ogsc/run/worker:{osbuild_composer_version}_{osbuild_version}",
             "composer:8700",
             stdout=asyncio.subprocess.PIPE,
             stderr=asyncio.subprocess.PIPE,
