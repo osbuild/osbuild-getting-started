@@ -37,10 +37,6 @@ translates it for the `image-builder-frontend`.
 
 The frontend for console.redhat.com, it gets data from `image-builder`.
 
-## Terminology
-
-No project can exist without its own terminology.
-
 ## Quickstart
 
 osbuild-getting-started tries to make it as easy as possible to both build
