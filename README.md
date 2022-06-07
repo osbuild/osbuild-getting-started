@@ -46,27 +46,28 @@ You should be all set with the following which drops you into the
 `composer-cli` where you can build an image or play around:
 
 ```
-user@desktopa osbuild-getting-started € sudo make setup-host  # requires sudo, installs host packages
+[root@desktopa osbuild-getting-started]# make setup-host
 # ...
-user@desktopa osbuild-getting-started € make run    
-Makefile: build/osbuild-composer: creating ogsc/build/osbuild-composer:v53
+[root@desktopa osbuild-getting-started]# make run
+Makefile: build/osbuild-composer: creating ogsc/build/osbuild-composer:v54
 Makefile: build/osbuild: creating ogsc/build/osbuild:v57
 Makefile: rpms/osbuild: creating rpms for osbuild v57
-Makefile: rpms/osbuild-composer: creating rpms for osbuild-composer v53
+Makefile: rpms/osbuild-composer: creating rpms for osbuild-composer v54
 Makefile: build/weldr-client: creating ogsc/build/weldr-client:v35.5
 Makefile: rpms/weldr-client: creating rpms for weldr-client v35.5
-Makefile: run/composer: creating ogsc/run/composer:v53
-Makefile: run/worker: creating ogsc/run/worker:v53_v57
+Makefile: run/composer: creating ogsc/run/composer:v54
+Makefile: run/worker: creating ogsc/run/worker:v54_v57
 Makefile: run/cli: creating ogsc/run/cli:v35.5
-run.py: env: starting `composer` container at 'v53'
-run.py: env: `composer` container has ip '10.88.0.2'
-run.py: env: starting `worker` container at 'v53'/'v57'
+run.py: env: starting `composer` container at 'v54'
+run.py: env: `composer` container has ip '10.88.0.59'
+run.py: env: starting `worker` container at 'v54'/'v57'
 run.py: env: starting `cli` container at 'v35.5'
-[root@2984c6020123 composer]# composer-cli blueprints push data/blueprint.toml 
-[root@2984c6020123 composer]# composer-cli compose start example-image qcow2
-Compose b0522b82-115f-4a22-b9b0-8174c2700d19 added to the queue
-[root@2984c6020123 composer]# composer-cli compose status
-b0522b82-115f-4a22-b9b0-8174c2700d19 RUNNING  Wed Jun 1 08:19:32 2022 example-image   0.0.1 qcow2   
+[root@665d08e647e1 composer]# composer-cli blueprints push data/blueprint.toml 
+[root@665d08e647e1 composer]# composer-cli compose start example-image oci
+Compose ec2dab95-4ab7-4674-aa2d-27f992a42922 added to the queue
+# ...
+[root@665d08e647e1 composer]# composer-cli compose status
+ec2dab95-4ab7-4674-aa2d-27f992a42922 FINISHED Tue Jun 7 09:59:39 2022 example-image   0.0.1 oci              2147483648
 ```
 
 ## Build
