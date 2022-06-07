@@ -42,6 +42,8 @@ async def env(
     prefix = secrets.token_hex(2)
 
     path_config = Path.cwd() / "build/config"
+    path_run = Path.cwd() / "run"
+    path_cache = Path.cwd() / "run"
 
     with tempfile.TemporaryDirectory() as path_tmp:
         os.mkdir(f"{path_tmp}/weldr")
@@ -95,6 +97,9 @@ async def env(
             "--cap-add", "CAP_MKNOD",
             "--cap-add", "CAP_SETFCAP",
             "--volume", f"{path_config}:/etc/osbuild-composer:ro,z",
+            "--volume", f"{path_run}:/run/osbuild:rw,z",
+            "--volume", f"{path_cache}:/var/cache/osbuild-worker:rw,z",
+            "--volume", f"/dev:/dev:rw,z",
             "--network", "podman",
             "--add-host", f"composer:{composer_ip}",
             "--name", f"{prefix}-worker",
