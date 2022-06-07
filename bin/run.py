@@ -99,7 +99,7 @@ async def env(
             "--volume", f"{path_config}:/etc/osbuild-composer:ro,z",
             "--volume", f"{path_run}:/run/osbuild:rw,z",
             "--volume", f"{path_cache}:/var/cache/osbuild-worker:rw,z",
-            "--volume", f"/dev:/dev:rw,z",
+            "--volume", f"/dev:/dev,z",
             "--network", "podman",
             "--add-host", f"composer:{composer_ip}",
             "--name", f"{prefix}-worker",
