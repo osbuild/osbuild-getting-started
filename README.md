@@ -115,16 +115,3 @@ make rpms/weldr-client weldr_client_version=v35
 
 If you've built at least osbuild and osbuild-composer and their RPMs it's time
 to get things up and running.
-
-## TODO
-
-### SELinux
-
-- [ ] SELinux is set to permissive, this needs to not happen. The reason for this
-      is that we get a `umount: block devices are not permitted on filesystem`
-      error in the worker. TODO: setup a correct SELinux label to be shared across
-      all containers.
-- [ ] /dev/loop-control is missing in non-privileged containers; I don't think we
-      can actually access this device in such a way that does not permit breaking
-      out of the container.
-- [ ] In general the `worker` container needs way too many permissions.
