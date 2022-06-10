@@ -109,8 +109,7 @@ run/cli: ## Launch the weldr-client container
 		src/ogsc/run/cli 2>&1 > /dev/null
 
 .PHONY: quick
-quick: ## Like 'run', but quick!
-	rpms/osbuild rpms/osbuild-composer rpms/weldr-client config/osbuild-composer run/composer run/worker run/cli
+quick: rpms/osbuild rpms/osbuild-composer rpms/weldr-client config/osbuild-composer run/composer run/worker run/cli ## Like 'run', but quick!
 
 .PHONY: run
 run: config/osbuild-composer quick ## Launch the whole stack
