@@ -20,6 +20,18 @@ weldr_client_version_x=$(shell echo $(weldr_client_version) | sed -e s/v//g)
 setup-host: ## Install all necessary packages on the host system
 	@./bin/setup-host.py container
 
+.PHONY: prefetch/rpms/osbuild
+prefetch/rpms/osbuild: ## Prefetch RPMs for osbuild from COPR
+	@echo ''
+
+.PHONY: prefetch/rpms/osbuild-composer
+prefetch/rpms/osbuild: ## Prefetch RPMs for osbuild-composer from COPR
+	@echo ''
+
+.PHONY: prefetch/rpms 
+prefetch/rpms: ## Prefetch RPMs for chosen versions from COPR
+	@echo ''
+
 .PHONY: build/osbuild 
 build/osbuild: ## Build the container for building osbuild rpms
 	@echo "Makefile: build/osbuild: creating $(PREFIX_BUILD)/osbuild:$(osbuild_version)"
