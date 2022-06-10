@@ -77,7 +77,7 @@ async def env(
             "podman",
             "inspect",
             f"{prefix}-composer",
-            "-f", "{{ .NetworkSettings.IPAddress }}",
+            "-f", "{{ .NetworkSettings.Networks.podman.IPAddress }}",
             stdout=asyncio.subprocess.PIPE,
             stderr=asyncio.subprocess.PIPE,
         )
