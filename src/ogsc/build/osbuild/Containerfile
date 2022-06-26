@@ -24,7 +24,7 @@ RUN \
         --branch ${osbuild_version} \
         --depth 1 \
         https://github.com/osbuild/osbuild \
-        /build/osbuild
+        /build/osbuild 2>&1 > /dev/null
 
 WORKDIR \
     /build/osbuild

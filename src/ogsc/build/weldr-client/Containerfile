@@ -18,7 +18,7 @@ RUN \
         --branch ${weldr_client_version} \
         --depth 1 \
         https://github.com/osbuild/weldr-client\
-        /build/weldr-client
+        /build/weldr-client 2>&1 > /dev/null
 
 WORKDIR \
     /build/weldr-client
