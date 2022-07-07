@@ -14,7 +14,8 @@ log = logging.getLogger(__name__)
 
 # The base set of packages necessary.
 package_base = {
-    "git"
+    "git",
+    "curl",
 }
 
 package_set = {
