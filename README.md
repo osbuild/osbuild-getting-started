@@ -18,8 +18,8 @@ project. This provides the build pipelines.
 ### osbuild-composer
 
 [osbuild-composer](https://github.com/osbuild/osbuild-composer) is the higher
-level translation layer between front end tools and osbuild. It provides APIs
-that can be used by web-frontends, cli-tools, and provides osbuild workers
+level translation layer between front end tools and `osbuild`. It provides APIs
+that can be used by web-frontends, cli-tools, and provides `osbuild` workers
 that perform the build pipelines.
 
 ### composer-cli
@@ -39,8 +39,8 @@ The frontend for console.redhat.com, it gets data from `image-builder`.
 
 ## Quickstart
 
-osbuild-getting-started tries to make it as easy as possible to both build
-RPMs of anything in the osbuild ecosystem as to run it (after you've built it).
+`osbuild-getting-started` tries to make it as easy as possible to both build
+RPMs of anything in the `osbuild` ecosystem as to run it (after you've built it).
 
 You should be all set with the following which drops you into the
 `composer-cli` where you can build an image or play around:
@@ -89,7 +89,7 @@ make build/osbuild osbuild_version=v55
 make rpms/osbuild osbuild_version=v55
 ```
 
-The first incantation will check out the `v55` tag for osbuild and create a
+The first incantation will check out the `v55` tag for `osbuild` and create a
 container with all build requirements satisfied. The second command will build
 the RPMs, these are available in `./build/rpms` afterwards. Note that the first
 is a dependency of the second.
@@ -113,5 +113,5 @@ make rpms/weldr-client weldr_client_version=v35
 
 ## Run
 
-If you've built at least osbuild and osbuild-composer and their RPMs it's time
+If you've built at least `osbuild` and `osbuild-composer` and their RPMs it's time
 to get things up and running.
