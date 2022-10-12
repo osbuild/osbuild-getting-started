@@ -1,6 +1,3 @@
-build/rpms/*.rpm
-
-build/config/*.pem
-build/config/*.toml
-build/config/ca
-build/config/repositories
+venv
+__pycache__
+*.egg-info

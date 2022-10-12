@@ -1,9 +1,0 @@
-name = "example-image"
-description = "An example image for osbuild-getting-started."
-version = "0.0.1"
-modules = []
-groups = []
-
-[[packages]]
-name = "tmux"
-version = "*"

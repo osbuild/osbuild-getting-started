@@ -1,3 +1,4 @@
+osbuild = r"""
 FROM registry.fedoraproject.org/fedora-minimal:36
 
 RUN \
@@ -28,3 +29,4 @@ RUN \
 
 WORKDIR \
     /build/osbuild
+"""
