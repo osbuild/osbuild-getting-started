@@ -29,7 +29,7 @@ RUN \
         -b ${osbuild_composer_version} \
         --depth 1 \
         https://github.com/osbuild/osbuild-composer \
-        /build/osbuild-composer 2>&1 > /dev/null
+        /build/osbuild-composer
 
 WORKDIR \
     /build/osbuild-composer
