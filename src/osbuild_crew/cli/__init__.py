@@ -1,5 +1,3 @@
-from typing import Optional
-
 import typer
 
 from . import build, inspect, manifest, run

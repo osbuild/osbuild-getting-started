@@ -1,10 +1,10 @@
-import tempfile
-import shutil
 import os
+import shutil
+import tempfile
 
+from ..data import build_commands, container_files
+from ..help import git, podman, project
 from ..rich import con
-from ..help import podman, project, git
-from ..data import container_files, build_commands
 
 
 def build_container(p: str, repository: str, ref: str) -> None:
@@ -32,7 +32,7 @@ def rpms(p: str, repository: str, ref: str, output_path: str) -> None:
         name = f"{p}-{project.key(p, repository, ref)}"
 
         con.print(f"Using build container {name!r} for RPM build.")
-        con.print(f"Starting RPM build.")
+        con.print("Starting RPM build.")
 
         podman.run(
             name,

@@ -2,11 +2,11 @@ from typing import Optional
 
 import typer
 
-cli = typer.Typer()
-
 from .. import build
 from ..help import git, project
 from ..rich import con
+
+cli = typer.Typer()
 
 
 @cli.callback()

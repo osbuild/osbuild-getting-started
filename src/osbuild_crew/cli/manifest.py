@@ -2,16 +2,14 @@ import json
 import secrets
 import subprocess
 import tempfile
-import time
-from typing import Optional
 
 import rich
 import typer
 from rich.tree import Tree
 
-cli = typer.Typer()
-
 from ..rich import con
+
+cli = typer.Typer()
 
 
 def recurse(tree: Tree, data, name: str) -> Tree:
