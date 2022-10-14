@@ -2,7 +2,7 @@ from typing import Optional
 
 import typer
 
-from . import build, inspect, run
+from . import build, inspect, manifest, run
 
 cli = typer.Typer()
 
@@ -41,3 +41,4 @@ def main(
 cli.add_typer(build.cli, name="build")
 cli.add_typer(run.cli, name="run")
 cli.add_typer(inspect.cli, name="inspect")
+cli.add_typer(manifest.cli, name="manifest")
