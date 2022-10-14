@@ -1,4 +1,5 @@
 import json
+from typing import Optional
 
 import typer
 from rich.tree import Tree
@@ -21,6 +22,16 @@ def recurse(tree: Tree, data, name: str) -> Tree:
         for index, item in enumerate(data):
             recurse(subtree, item, index)
     return subtree
+
+
+def ignore(name: str, data) -> None:
+    for pipeline in data["pipelines"]:
+        to_pop = []
+        for index, stage in enumerate(pipeline["stages"]):
+            if stage["type"] == name:
+                to_pop.append(index)
+        for index in to_pop:
+            pipeline["stages"].pop(index)
 
 
 def resolve(data) -> None:
@@ -57,6 +68,7 @@ def main(manifest: str) -> int:
 @cli.command()
 def pretty_print(
     ctx: typer.Context,
+    ignore_stage: list[str] = typer.Option([]),
     resolve_sources: bool = typer.Option(
         True, help="Resolve content hashes of sources to their names."
     ),
@@ -75,6 +87,9 @@ def pretty_print(
     except FileNotFoundError:
         con.print(f"[bold][red]Could not open file {path!r}[/red][/bold]")
         return 1
+
+    for stage in ignore_stage:
+        ignore(stage, data)
 
     if resolve_sources and "sources" in data:
         resolve(data)
