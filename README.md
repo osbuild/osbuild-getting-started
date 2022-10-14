@@ -34,10 +34,10 @@ RPMs built succesfully, available in: .
 Building `osbuild` RPMs from a custom repository and branch:
 
 ```
-€ osbuild-crew \
+€ osbuild-crew build \
   --osbuild-repo=~/dev/src/work/osbuild \
   --osbuild-ref=module-is-executable \
-  build rpms osbuild -o .
+  rpms osbuild -o .
 Starting RPM build(s)
 Starting build container build for osbuild@module-is-executable
 Setting up build container context in '/tmp/tmpfgjf61nj'.

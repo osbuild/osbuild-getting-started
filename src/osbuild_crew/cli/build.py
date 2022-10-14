@@ -1,4 +1,5 @@
 import typer
+from typing import Optional
 
 cli = typer.Typer()
 
@@ -8,7 +9,31 @@ from ..rich import con
 
 
 @cli.callback()
-def main() -> int:
+def main(
+    osbuild_repo: str = typer.Option(
+        "https://github.com/osbuild/osbuild",
+        help="Repository to get `osbuild` sources from.",
+    ),
+    osbuild_ref: Optional[str] = typer.Option(
+        None, help="Reference to checkout from the `osbuild` repository."
+    ),
+    osbuild_composer_repo: str = typer.Option(
+        "https://github.com/osbuild/osbuild-composer",
+        help="Repository to get `osbuild-composer` sources from.",
+    ),
+    osbuild_composer_ref: Optional[str] = typer.Option(
+        None,
+        help="Reference to checkout from the `osbuild-composer` repository.",
+    ),
+    weldr_client_repo: str = typer.Option(
+        "https://github.com/osbuild/weldr-client",
+        help="Repository to get `weldr-client` sources from.",
+    ),
+    weldr_client_ref: Optional[str] = typer.Option(
+        None,
+        help="Reference to checkout from the `weldr-client` repository.",
+    ),
+) -> int:
     """Build-related subcommands."""
 
     return 0
@@ -21,7 +46,7 @@ def rpms(
     output_path: str = typer.Option(..., "--output-path", "-o", help="Foo"),
 ) -> int:
     """Build RPMs for `osbuild` projects."""
-    root = ctx.parent.parent
+    root = ctx.parent
 
     projects = [project.normalize(p) for p in projects]
     builds = []
