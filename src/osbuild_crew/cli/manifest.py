@@ -16,6 +16,7 @@ def recurse(tree: Tree, data, name: str) -> Tree:
         for key, val in data.items():
             recurse(subtree, val, key)
     elif isinstance(data, list):
+        name = f"{name} [italic]({len(data)})[/italic]"
         subtree = tree.add(name)
         for index, item in enumerate(data):
             recurse(subtree, item, index)
