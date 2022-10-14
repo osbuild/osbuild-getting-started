@@ -87,6 +87,10 @@ def pretty_print(
         con.print(f"[bold][red]Could not open file {path!r}[/red][/bold]")
         return 1
 
+    # If the manifest comes from composer we extract the manifest part
+    if "manifest" in data:
+        data = data["manifest"]
+
     for stage in ignore_stage:
         ignore(stage, data)
 
