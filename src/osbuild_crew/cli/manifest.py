@@ -59,7 +59,7 @@ def resolve(data) -> None:
 
 
 @cli.callback()
-def main(manifest: str) -> int:
+def main() -> int:
     """Manifest-related subcommands."""
 
     return 0
@@ -67,7 +67,7 @@ def main(manifest: str) -> int:
 
 @cli.command()
 def pretty_print(
-    ctx: typer.Context,
+    manifest: str,
     ignore_stage: list[str] = typer.Option([]),
     resolve_sources: bool = typer.Option(
         True, help="Resolve content hashes of sources to their names."
@@ -78,8 +78,7 @@ def pretty_print(
 ) -> int:
     """Pretty print an `osbuild` manifest file."""
 
-    root = ctx.parent
-    path = root.params["manifest"]
+    path = manifest
 
     try:
         with open(path) as f:

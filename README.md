@@ -55,7 +55,7 @@ RPMs built succesfully, available in: .
 
 Pretty print an `osbuild` manifest:
 ```
-€ osbuild-crew manifest manifest.json pretty-print | head -n20
+€ osbuild-crew manifest pretty-print manifest.json | head -n20
 manifest.json
 ├── version: 2
 └── pipelines (7)
