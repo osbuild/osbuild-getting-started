@@ -52,3 +52,28 @@ RPMs created: ['osbuild-69-1.20221014git91f4c34.fc37.noarch.rpm',
 Done with RPM build for osbuild@module-is-executable
 RPMs built succesfully, available in: .
 ```
+
+Pretty print an `osbuild` manifest:
+```
+€ osbuild-crew manifest manifest.json pretty-print | head -n20
+manifest.json
+├── version: 2
+└── pipelines (7)
+    ├── 0
+    │   ├── name: build
+    │   ├── runner: org.osbuild.fedora38
+    │   └── stages (2)
+    │       ├── 0
+    │       │   ├── type: org.osbuild.rpm
+    │       │   ├── inputs
+    │       │   │   └── packages
+    │       │   │       ├── type: org.osbuild.files
+    │       │   │       ├── origin: org.osbuild.source
+    │       │   │       └── references (282)
+    │       │   │           ├── 0: alternatives-1.21-1.fc38.x86_64.rpm
+    │       │   │           ├── 1: audit-libs-3.0.9-1.fc38.x86_64.rpm
+    │       │   │           ├── 2: authselect-1.4.0-3.fc37.x86_64.rpm
+    │       │   │           ├── 3: authselect-libs-1.4.0-3.fc37.x86_64.rpm
+    │       │   │           ├── 4: basesystem-11-14.fc37.noarch.rpm
+    │       │   │           ├── 5: bash-5.2.2-2.fc38.x86_64.rpm
+```
