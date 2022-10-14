@@ -77,3 +77,9 @@ manifest.json
     │       │   │           ├── 4: basesystem-11-14.fc37.noarch.rpm
     │       │   │           ├── 5: bash-5.2.2-2.fc38.x86_64.rpm
 ```
+
+`vimdiff` two `osbuild` manifests:
+```
+€ osbuild-crew manifest pretty-diff --skip-stage=org.osbuild.rpm manifest-1.json manifest-2.json | head -n20
+# [vimdiff opens]
+```

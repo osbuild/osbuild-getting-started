@@ -1,5 +1,6 @@
-import typer
 from typing import Optional
+
+import typer
 
 cli = typer.Typer()
 

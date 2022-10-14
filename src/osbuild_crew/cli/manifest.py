@@ -1,6 +1,11 @@
 import json
+import secrets
+import subprocess
+import tempfile
+import time
 from typing import Optional
 
+import rich
 import typer
 from rich.tree import Tree
 
@@ -32,6 +37,35 @@ def ignore(name: str, data) -> None:
                 to_pop.append(index)
         for index in to_pop:
             pipeline["stages"].pop(index)
+
+
+def manifest_to_tree(
+    path: str,
+    ignore_stage: list[str],
+    resolve_sources: bool,
+    skip_sources: bool,
+):
+    try:
+        with open(path) as f:
+            data = json.load(f)
+    except FileNotFoundError:
+        con.print(f"[bold][red]Could not open file {path!r}[/red][/bold]")
+        return 1
+
+    # If the manifest comes from composer we extract the manifest part
+    if "manifest" in data:
+        data = data["manifest"]
+
+    for stage in ignore_stage:
+        ignore(stage, data)
+
+    if resolve_sources and "sources" in data:
+        resolve(data)
+
+    if skip_sources and "sources" in data:
+        del data["sources"]
+
+    return recurse(Tree(""), data, f"[bold]{path}[/bold]")
 
 
 def resolve(data) -> None:
@@ -78,29 +112,40 @@ def pretty_print(
 ) -> int:
     """Pretty print an `osbuild` manifest file."""
 
-    path = manifest
+    con.print(
+        manifest_to_tree(manifest, ignore_stage, resolve_sources, skip_sources)
+    )
 
-    try:
-        with open(path) as f:
-            data = json.load(f)
-    except FileNotFoundError:
-        con.print(f"[bold][red]Could not open file {path!r}[/red][/bold]")
-        return 1
+    return 0
 
-    # If the manifest comes from composer we extract the manifest part
-    if "manifest" in data:
-        data = data["manifest"]
 
-    for stage in ignore_stage:
-        ignore(stage, data)
+@cli.command()
+def pretty_diff(
+    manifests: list[str],
+    ignore_stage: list[str] = typer.Option([]),
+    resolve_sources: bool = typer.Option(
+        True, help="Resolve content hashes of sources to their names."
+    ),
+    skip_sources: bool = typer.Option(
+        True, help="Skips display of the sources in the manifest."
+    ),
+) -> int:
+    """Pretty print a diff of `osbuild` manifest files."""
 
-    if resolve_sources and "sources" in data:
-        resolve(data)
+    with tempfile.TemporaryDirectory() as temporary:
+        paths = []
 
-    if skip_sources and "sources" in data:
-        del data["sources"]
+        for manifest in manifests:
+            path = f"{temporary}/{manifest}-{secrets.token_hex(2)}"
+            tree = manifest_to_tree(
+                manifest, ignore_stage, resolve_sources, skip_sources
+            )
 
-    tree = recurse(Tree(""), data, f"[bold]{path}[/bold]")
-    con.print(tree)
+            with open(path, "w") as f:
+                rich.print(tree, file=f)
+
+            paths.append(path)
+
+        subprocess.run(["vimdiff"] + paths)
 
     return 0
