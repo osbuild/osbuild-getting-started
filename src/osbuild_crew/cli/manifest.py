@@ -25,6 +25,8 @@ def recurse(tree: Tree, data, name: str) -> Tree:
         subtree = tree.add(name)
         for index, item in enumerate(data):
             recurse(subtree, item, index)
+    else:
+        raise ValueError(f"recurse does not know how to deal with {type(data)}")
     return subtree
 
 
