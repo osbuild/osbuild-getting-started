@@ -2,6 +2,7 @@ import json
 import secrets
 import subprocess
 import tempfile
+import os
 
 import rich
 import typer
@@ -134,10 +135,11 @@ def pretty_diff(
         paths = []
 
         for manifest in manifests:
-            path = f"{temporary}/{manifest}-{secrets.token_hex(2)}"
             tree = manifest_to_tree(
                 manifest, ignore_stage, resolve_sources, skip_sources
             )
+
+            path = f"{temporary}/{os.path.basename(manifest)}-{secrets.token_hex(2)}"
 
             with open(path, "w") as f:
                 rich.print(tree, file=f)
