@@ -55,7 +55,7 @@ RPMs built succesfully, available in: .
 
 Pretty print an `osbuild` manifest:
 ```
-€ osbuild-crew manifest pretty-print manifest.json | head -n20
+€ osbuild-crew manifest print manifest.json | head -n20
 manifest.json
 ├── version: 2
 └── pipelines (7)
@@ -80,6 +80,6 @@ manifest.json
 
 `vimdiff` two `osbuild` manifests:
 ```
-€ osbuild-crew manifest pretty-diff --skip-stage=org.osbuild.rpm manifest-1.json manifest-2.json | head -n20
+€ osbuild-crew manifest diff --skip-stage=org.osbuild.rpm manifest-1.json manifest-2.json | head -n20
 # [vimdiff opens]
 ```

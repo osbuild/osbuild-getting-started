@@ -97,7 +97,7 @@ def main() -> int:
     return 0
 
 
-@cli.command()
+@cli.command(name="print")
 def pretty_print(
     manifest: str,
     ignore_stage: list[str] = typer.Option([]),
@@ -117,7 +117,7 @@ def pretty_print(
     return 0
 
 
-@cli.command()
+@cli.command(name="diff")
 def pretty_diff(
     manifests: list[str],
     ignore_stage: list[str] = typer.Option([]),
