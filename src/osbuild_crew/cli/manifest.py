@@ -22,12 +22,12 @@ def recurse_as_tree(tree: Tree, data, name: str) -> Tree:
     elif isinstance(data, dict):
         subtree = tree.add(str(name))
         for key, val in data.items():
-            recurse(subtree, val, key)
+            recurse_as_tree(subtree, val, key)
     elif isinstance(data, list):
         name = f"{name} [italic]({len(data)})[/italic]"
         subtree = tree.add(name)
         for index, item in enumerate(data):
-            recurse(subtree, item, index)
+            recurse_as_tree(subtree, item, index)
     else:
         raise ValueError(f"recurse does not know how to deal with {type(data)}")
     return subtree
@@ -119,9 +119,7 @@ def resolve(data) -> None:
 
     # We can't handle all source types but some we can
     if "org.osbuild.curl" in data["sources"]:
-        for name, source in data["sources"]["org.osbuild.curl"][
-            "items"
-        ].items():
+        for name, source in data["sources"]["org.osbuild.curl"]["items"].items():
             sources[name] = source["url"]
 
     for pipeline in data["pipelines"]:
