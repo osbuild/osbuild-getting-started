@@ -1,4 +1,4 @@
-FROM registry.fedoraproject.org/fedora:36
+FROM registry.fedoraproject.org/fedora:38
 
 RUN \
     dnf install -y \
@@ -14,7 +14,6 @@ RUN \
         selinux-policy-devel \
         systemd \
         golang \
-        go-compilers-golang-compiler \
         krb5-devel \
         dnf-plugins-core && \
         dnf clean all
