@@ -1,0 +1,13 @@
+FROM fedora:38
+
+RUN dnf install -y openssl
+
+COPY ./tools/gen-certs.sh .
+COPY ./config/x509/openssl.cnf .
+COPY ./config/composer/acl.yml /config/.
+COPY ./config/composer/osbuild-composer.toml /config/.
+COPY ./config/worker/osbuild-worker.toml /config/.
+COPY ./config/worker/secret /config/.
+COPY ./config/backend/quotas.json /config/.
+
+RUN ./gen-certs.sh ./openssl.cnf /config /config/ca

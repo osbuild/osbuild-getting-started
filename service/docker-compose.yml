@@ -7,7 +7,24 @@ networks:
       config:
         - subnet: 172.31.0.0/16
 
+volumes:
+  config:
+    driver_opts:
+      type: none
+      # this can be modified as desired
+      device: /scratch/podman/image-builder-config
+      o: bind
+
 services:
+  config:
+    image: local/config
+    build:
+      context: .
+      dockerfile: ./config/Dockerfile-config
+    volumes:
+      - config:/config
+      - ../../osbuild-composer/repositories:/config/repositories:z
+
   composer:
     image: local/osbuild-composer
     build:
@@ -21,14 +38,12 @@ services:
         "--composer-api"
       ]
     volumes:
-      - ${COMPOSER_CONFIG_DIR}/osbuild-composer.toml:/etc/osbuild-composer/osbuild-composer.toml:z
-      - ${COMPOSER_CONFIG_DIR}/acl.yml:/etc/osbuild-composer/acl.yml:z
-      - ${CERT_DIR}/ca-crt.pem:/etc/osbuild-composer/ca-crt.pem:z
-      - ${CERT_DIR}/composer-crt.pem:/etc/osbuild-composer/composer-crt.pem:z
-      - ${CERT_DIR}/composer-key.pem:/etc/osbuild-composer/composer-key.pem:z
+      - config:/etc/osbuild-composer
     ports:
       - 8080:8080
       - 8700:8700
+    depends_on:
+      - config
     networks:
       net:
         ipv4_address: 172.31.0.10
@@ -41,9 +56,8 @@ services:
     # override the entrypoint to specify composer hostname and port
     entrypoint: [ "/usr/libexec/osbuild-composer/osbuild-worker", "composer:8700" ]
     volumes:
-      - ${CERT_DIR}/ca-crt.pem:/etc/osbuild-composer/ca-crt.pem:z
-      - ${WORKER_CONFIG_DIR}/osbuild-worker.toml:/etc/osbuild-worker/osbuild-worker.toml:z
-      - ${WORKER_CONFIG_DIR}/secret:/etc/osbuild-worker/secret:z
+      - config:/etc/osbuild-composer
+      - config:/etc/osbuild-worker
     environment:
       - CACHE_DIRECTORY=/var/cache/osbuild-composer
     privileged: true
@@ -52,6 +66,7 @@ services:
       - SYS_ADMIN
       - NET_ADMIN
     depends_on:
+      - config
       - composer
     restart: on-failure
     networks:
@@ -87,10 +102,7 @@ services:
       timeout: 2s
       retries: 10
     volumes:
-      - ./config/backend/quotas.json:/config/quotas.json:z
-      - ${CERT_DIR}/ca-crt.pem:/etc/image-builder/ca-crt.pem:z
-      - ${CERT_DIR}/client-crt.pem:/etc/image-builder/client-crt.pem:z
-      - ${CERT_DIR}/client-key.pem:/etc/image-builder/client-key.pem:z
+      - config:/etc/image-builder
     environment:
       - LISTEN_ADDRESS=backend:8086
       - LOG_LEVEL=DEBUG
@@ -106,8 +118,9 @@ services:
       - COMPOSER_CLIENT_ID=${COMPOSER_CLIENT_ID}
       - COMPOSER_CA_PATH=/etc/image-builder/ca-crt.pem
       - DISTRIBUTIONS_DIR=/app/distributions
-      - QUOTA_FILE=/config/quotas.json
+      - QUOTA_FILE=/etc/image-builder/quotas.json
     depends_on:
+      - config
       - composer
       - postgres
     restart: on-failure
@@ -122,9 +135,11 @@ services:
       dockerfile: ./distribution/Dockerfile-fauxauth
     entrypoint: [ "/opt/fauxauth.py", "-a", "0.0.0.0", "-p", "8888" ]
     volumes:
-      - ${CERT_DIR}/:/etc/osbuild-composer/:z
+      - config:/etc/osbuild-composer
     ports:
       - 8888:8888
+    depends_on:
+      - config
     networks:
       net:
         ipv4_address: 172.31.0.50
