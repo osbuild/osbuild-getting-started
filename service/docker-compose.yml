@@ -1,4 +1,12 @@
 version: '3.9'
+
+networks:
+  net:
+    ipam:
+      driver: default
+      config:
+        - subnet: 172.31.0.0/16
+
 services:
   composer:
     image: local/osbuild-composer
@@ -24,6 +32,7 @@ services:
     networks:
       net:
         ipv4_address: 172.31.0.10
+
   worker:
     image: local/osbuild-worker
     build:
@@ -43,11 +52,12 @@ services:
       - SYS_ADMIN
       - NET_ADMIN
     depends_on:
-      - "composer"
+      - composer
     restart: on-failure
     networks:
       net:
         ipv4_address: 172.31.0.20
+
   postgres:
     image: docker.io/postgres:10.5
     healthcheck:
@@ -63,13 +73,14 @@ services:
     networks:
       net:
         ipv4_address: 172.31.0.30
+
   backend:
     image: local/image-builder
     build:
       context: ../../image-builder
       dockerfile: ./distribution/Dockerfile-ubi
     ports:
-      - "8086:8086"
+      - 8086:8086
     healthcheck:
       test: [ "CMD", "curl", "localhost:8086/status" ]
       interval: 2s
@@ -97,12 +108,13 @@ services:
       - DISTRIBUTIONS_DIR=/app/distributions
       - QUOTA_FILE=/config/quotas.json
     depends_on:
-      - "composer"
-      - "postgres"
+      - composer
+      - postgres
     restart: on-failure
     networks:
       net:
         ipv4_address: 172.31.0.40
+
   fauxauth:
     image: local/osbuild-fauxauth
     build:
@@ -112,13 +124,7 @@ services:
     volumes:
       - ${CERT_DIR}/:/etc/osbuild-composer/:z
     ports:
-      - "8888:8888"
+      - 8888:8888
     networks:
       net:
-        ipv4_address: 172.31.0.80
-networks:
-  net:
-    ipam:
-      driver: default
-      config:
-        - subnet: 172.31.0.0/16
+        ipv4_address: 172.31.0.50
