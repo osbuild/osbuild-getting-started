@@ -1,6 +1,6 @@
-build/rpms/*.rpm
+on-prem/build/rpms/*.rpm
 
-build/config/*.pem
-build/config/*.toml
-build/config/ca
-build/config/repositories
+on-prem/build/config/*.pem
+on-prem/build/config/*.toml
+on-prem/build/config/ca
+on-prem/build/config/repositories
