@@ -48,7 +48,7 @@ services:
       - CACHE_DIRECTORY=/var/cache/osbuild-composer
     privileged: true
     cap_add:
-      - MKNOD
+      - CAP_MKNOD
       - SYS_ADMIN
       - NET_ADMIN
     depends_on:
