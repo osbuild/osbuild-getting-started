@@ -103,18 +103,6 @@ services:
     networks:
       net:
         ipv4_address: 172.31.0.40
-  frontend:
-    image: local/image-builder-frontend
-    ports:
-      - "1337:1337"
-    build:
-      context: ../../image-builder-frontend
-      dockerfile: ./distribution/Dockerfile
-    environment:
-      - HOST=frontend
-    networks:
-      net:
-        ipv4_address: 172.31.0.50
   fauxauth:
     image: local/osbuild-fauxauth
     build:
