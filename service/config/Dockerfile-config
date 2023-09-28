@@ -7,6 +7,7 @@ COPY ./config/x509/openssl.cnf .
 COPY ./config/composer/acl.yml /config/.
 COPY ./config/composer/osbuild-composer.toml /config/.
 COPY ./config/worker/osbuild-worker.toml /config/.
+COPY ./config/worker/s3-credentials /config/.
 COPY ./config/worker/secret /config/.
 COPY ./config/backend/quotas.json /config/.
 
