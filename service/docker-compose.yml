@@ -115,35 +115,6 @@ services:
     networks:
       net:
         ipv4_address: 172.31.0.50
-  prometheus:
-    profiles: ["metrics"]
-    image: prom/prometheus:latest
-    ports:
-      - "9000:9090"
-    volumes:
-      - ./config/prometheus:/config
-      - ${CERT_DIR}/ca-crt.pem:/etc/image-builder/ca-crt.pem:z
-      - ${CERT_DIR}/client-crt.pem:/etc/image-builder/client-crt.pem:z
-      - ${CERT_DIR}/client-key.pem:/etc/image-builder/client-key.pem:z
-    restart: unless-stopped
-    command:
-      - "--config.file=/config/prometheus.yml"
-    networks:
-      net:
-        ipv4_address: 172.31.0.60
-  grafana:
-    profiles: ["metrics"]
-    image: grafana/grafana:latest
-    ports:
-      - "3000:3000"
-    volumes:
-      - ./config/grafana:/etc/grafana/provisioning/
-    restart: unless-stopped
-    environment:
-      - GF_SECURITY_ADMIN_PASSWORD=foobar
-    networks:
-      net:
-        ipv4_address: 172.31.0.70
   fauxauth:
     image: local/osbuild-fauxauth
     build:
