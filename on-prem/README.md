@@ -1,41 +1,4 @@
-# Getting started with `osbuild`
-
-The `osbuild` system is a group of applications, APIs, specifications, and
-implementations to build images of Linux operating systems in an isolated
-and reliable way. Ready to be deployed to your favorite cloud provider,
-private hypervisor, or disk-media.
-
-## Ecosystem
-
-Tasks are split out across a multitude of tools, here's a quick rundown
-of what each of them does.
-
-### osbuild
-
-At the core of the project is the [osbuild](https://github.com/osbuild/osbuild)
-project. This provides the build pipelines.
-
-### osbuild-composer
-
-[osbuild-composer](https://github.com/osbuild/osbuild-composer) is the higher
-level translation layer between front end tools and `osbuild`. It provides APIs
-that can be used by web-frontends, cli-tools, and provides `osbuild` workers
-that perform the build pipelines.
-
-### composer-cli
-
-The [composer-cli](https://github.com/osbuild/weldr-client) (called
-`weldr-client` for historical reasons). Is one of the clients for
-`osbuild-composer`. It provides a command line interface to the exposed APIs.
-
-### image-builder
-
-This is the console.redhat.com HTTP API that speaks to `osbuild-composer` and
-translates it for the `image-builder-frontend`.
-
-### image-builder-frontend
-
-The frontend for console.redhat.com, it gets data from `image-builder`.
+# Getting started with `osbuild` on-prem containers
 
 ## Quickstart
 
@@ -62,7 +25,7 @@ run.py: env: starting `composer` container at 'v54'
 run.py: env: `composer` container has ip '10.88.0.59'
 run.py: env: starting `worker` container at 'v54'/'v57'
 run.py: env: starting `cli` container at 'v35.5'
-[root@665d08e647e1 composer]# composer-cli blueprints push data/blueprint.toml 
+[root@665d08e647e1 composer]# composer-cli blueprints push data/blueprint.toml
 [root@665d08e647e1 composer]# composer-cli compose start example-image oci
 Compose ec2dab95-4ab7-4674-aa2d-27f992a42922 added to the queue
 # ...
