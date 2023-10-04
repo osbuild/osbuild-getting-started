@@ -1,0 +1,166 @@
+version: '3.9'
+
+networks:
+  net:
+    ipam:
+      driver: default
+      config:
+        - subnet: 172.31.0.0/16
+
+volumes:
+  config:
+    driver_opts:
+      type: none
+      # this can be modified as desired
+      device: /scratch/podman/image-builder-config
+      o: bind
+
+services:
+  config:
+    image: local/config
+    build:
+      context: .
+      dockerfile: ./config/Dockerfile-config
+    volumes:
+      - config:/config
+      - ../../osbuild-composer/repositories:/config/repositories:z
+
+  composer:
+    image: local/osbuild-composer
+    build:
+      context: ../../osbuild-composer
+      dockerfile: ./distribution/Dockerfile-ubi
+    entrypoint:
+      [
+        "python3",
+        "/opt/entrypoint.py",
+        "--remote-worker-api",
+        "--composer-api"
+      ]
+    volumes:
+      - config:/etc/osbuild-composer
+    ports:
+      - 8080:8080
+      - 8700:8700
+    depends_on:
+      - config
+    networks:
+      net:
+        ipv4_address: 172.31.0.10
+
+  worker:
+    image: local/osbuild-worker
+    build:
+      context: ../../osbuild-composer
+      dockerfile: ./distribution/Dockerfile-worker
+    # override the entrypoint to specify composer hostname and port
+    entrypoint: [ "/usr/libexec/osbuild-composer/osbuild-worker", "composer:8700" ]
+    volumes:
+      - config:/etc/osbuild-composer
+      - config:/etc/osbuild-worker
+    environment:
+      - CACHE_DIRECTORY=/var/cache/osbuild-composer
+    privileged: true
+    cap_add:
+      - CAP_MKNOD
+      - SYS_ADMIN
+      - NET_ADMIN
+    depends_on:
+      - config
+      - composer
+    restart: on-failure
+    networks:
+      net:
+        ipv4_address: 172.31.0.20
+
+  postgres:
+    image: docker.io/postgres:10.5
+    healthcheck:
+      test: [ "CMD", "pg_isready", "-U", "postgres", "-d", "postgres" ]
+      interval: 2s
+      timeout: 2s
+      retries: 10
+    environment:
+      - POSTGRES_USER=postgres
+      - POSTGRES_PASSWORD=postgres
+    volumes:
+      - ../../image-builder/internal/db/migrations-tern/:/docker-entrypoint-initdb.d/:Z
+    networks:
+      net:
+        ipv4_address: 172.31.0.30
+
+  backend:
+    image: local/image-builder
+    build:
+      context: ../../image-builder
+      dockerfile: ./distribution/Dockerfile-ubi
+    ports:
+      - 8086:8086
+    healthcheck:
+      test: [ "CMD", "curl", "localhost:8086/status" ]
+      interval: 2s
+      timeout: 2s
+      retries: 10
+    volumes:
+      - config:/etc/image-builder
+    environment:
+      - LISTEN_ADDRESS=backend:8086
+      - LOG_LEVEL=DEBUG
+      - ALLOWED_ORG_IDS=*
+      - PGHOST=postgres
+      - PGPORT=5432
+      - PGDATABASE=postgres
+      - PGUSER=postgres
+      - PGPASSWORD=postgres
+      - COMPOSER_URL=https://composer:8080
+      - COMPOSER_TOKEN_URL=http://fauxauth:8888/token?refresh_token=42
+      - COMPOSER_CLIENT_SECRET=${COMPOSER_CLIENT_SECRET}
+      - COMPOSER_CLIENT_ID=${COMPOSER_CLIENT_ID}
+      - COMPOSER_CA_PATH=/etc/image-builder/ca-crt.pem
+      - DISTRIBUTIONS_DIR=/app/distributions
+      - QUOTA_FILE=/etc/image-builder/quotas.json
+    depends_on:
+      - config
+      - composer
+      - postgres
+    restart: on-failure
+    networks:
+      net:
+        ipv4_address: 172.31.0.40
+
+  fauxauth:
+    image: local/osbuild-fauxauth
+    build:
+      context: ../../osbuild-composer
+      dockerfile: ./distribution/Dockerfile-fauxauth
+    entrypoint: [ "/opt/fauxauth.py", "-a", "0.0.0.0", "-p", "8888" ]
+    volumes:
+      - config:/etc/osbuild-composer
+    ports:
+      - 8888:8888
+    depends_on:
+      - config
+    networks:
+      net:
+        ipv4_address: 172.31.0.50
+
+  minio:
+    image: minio/minio:latest
+    volumes:
+      # this can be modified as desired
+      - /scratch/data:/data:z
+    command: server /data --console-address ":9090"
+    environment:
+    - MINIO_ROOT_USER=admin
+    - MINIO_ROOT_PASSWORD=password42
+    ports:
+      - 9000:9000
+      - 9090:9090
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:9000/minio/health/live"]
+      interval: 30s
+      timeout: 20s
+      retries: 3
+    networks:
+      net:
+        ipv4_address: 172.31.0.60

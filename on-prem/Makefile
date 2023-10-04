@@ -20,7 +20,7 @@ weldr_client_version_x=$(shell echo $(weldr_client_version) | sed -e s/v//g)
 setup-host: ## Install all necessary packages on the host system
 	./bin/setup-host.py container
 
-.PHONY: build/osbuild 
+.PHONY: build/osbuild
 build/osbuild: ## Build the container for building osbuild rpms
 	@echo "Makefile: build/osbuild: creating $(PREFIX_BUILD)/osbuild:$(osbuild_version)"
 	podman build \
@@ -28,7 +28,7 @@ build/osbuild: ## Build the container for building osbuild rpms
 		-t $(PREFIX_BUILD)/osbuild:$(osbuild_version) \
 		src/ogsc/build/osbuild
 
-.PHONY: rpms/osbuild 
+.PHONY: rpms/osbuild
 rpms/osbuild: build/osbuild ## Build the rpms for osbuild
 	@echo "Makefile: rpms/osbuild: creating rpms for osbuild ${osbuild_version}"
 	ls $(shell pwd)/build/rpms/osbuild-$(osbuild_version_x)-*.rpm > /dev/null || podman run \
