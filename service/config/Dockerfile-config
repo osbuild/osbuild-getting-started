@@ -1,6 +1,7 @@
 FROM fedora:38
 
 RUN dnf install -y openssl
+RUN mkdir -p /config
 
 COPY ./tools/gen-certs.sh .
 COPY ./config/x509/openssl.cnf .
