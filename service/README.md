@@ -95,7 +95,7 @@ The config variables for the worker can be found [here](https://github.com/osbui
 *NOTE:* If you change the config files, you will either need to modify the worker config in the `/scratch/podman/image-builder-config` file and restart
 the containers. Alternatively, you will need to remove the named volume and rebuild the config container. The steps for this are
 as follows:
-
+Run the following from **this directory**.
 - stop the containers and remove volumes
 
 ```bash
@@ -116,7 +116,7 @@ docker compose up
 
 ## Run the backend
 
-To build the containers run the following command:
+To build the containers run the following command from **this directory**:
 
 ```bash
 docker compose build
