@@ -285,7 +285,7 @@ class Cli(contextlib.AbstractContextManager):
 
     def _spawn_dnf_json(self):
         cmd = [
-            "/usr/libexec/osbuild-composer/dnf-json",
+            "/usr/libexec/osbuild-depsolve-dnf",
         ]
 
         if self.args.dnf_json_port:

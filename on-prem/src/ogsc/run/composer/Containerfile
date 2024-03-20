@@ -1,13 +1,16 @@
-FROM fedora:38
+FROM registry.fedoraproject.org/fedora:40
 
 ARG osbuild_composer_version=*
+ARG osbuild_version=*
 
 RUN \
     dnf in -y \
-        $(echo "/rpms/osbuild-composer-dnf-json-${osbuild_composer_version}-1.*.x86_64.rpm") \
         $(echo "/rpms/osbuild-composer-core-${osbuild_composer_version}-1.*.x86_64.rpm") \
         $(echo "/rpms/osbuild-composer-worker-${osbuild_composer_version}-1.*.x86_64.rpm") \
         $(echo "/rpms/osbuild-composer-${osbuild_composer_version}-1.*.x86_64.rpm") \
+        $(echo "/rpms/python3-osbuild-${osbuild_version}-1.*.noarch.rpm") \
+        $(echo "/rpms/osbuild-${osbuild_version}-1.*.noarch.rpm") \
+        $(echo "/rpms/osbuild-*-${osbuild_version}-1.*.noarch.rpm") \
         libxcrypt-compat && \
         dnf clean all
 
