@@ -5,7 +5,6 @@ ARG osbuild_version=*
 
 RUN \
     dnf in -y \
-        $(echo "/rpms/osbuild-composer-dnf-json-${osbuild_composer_version}-1.*.x86_64.rpm") \
         $(echo "/rpms/osbuild-composer-worker-${osbuild_composer_version}-1.*.x86_64.rpm") \
         $(echo "/rpms/python3-osbuild-${osbuild_version}-1.*.noarch.rpm") \
         $(echo "/rpms/osbuild-${osbuild_version}-1.*.noarch.rpm") \
