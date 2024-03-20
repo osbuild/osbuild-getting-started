@@ -1,4 +1,4 @@
-FROM fedora:38
+FROM registry.fedoraproject.org/fedora:40
 
 ARG osbuild_composer_version=*
 ARG osbuild_version=*
