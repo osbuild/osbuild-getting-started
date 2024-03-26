@@ -1,6 +1,10 @@
 # devtools
 
 Development Tools for Image Builder
+Here are some tools of "Image Builder" to start up a development environment for the
+[hosted deployment](https://osbuild.org/docs/hosted/architecture/).
+The reason for all the `sudo` below is that the stack has to perform may operations
+with loop devices etc. where root privileges are required. 
 
 ## Setup
 
@@ -10,6 +14,9 @@ To start local development, first clone the image builder stack:
 git clone git@github.com:osbuild/osbuild-composer.git
 git clone git@github.com:osbuild/image-builder.git
 git clone git@github.com:osbuild/osbuild-getting-started.git
+git clone git@github.com:osbuild/image-builder-frontend.git
+git clone git@github.com:osbuild/osbuild.git
+git clone git@github.com:osbuild/pulp-client.git
 ```
 
 The folder structure should look like:
@@ -17,8 +24,10 @@ The folder structure should look like:
 ```
 .
 ├── image-builder
+├── image-builder-frontend
 ├── osbuild-getting-started
-└── osbuild-composer
+├── osbuild-composer
+└── pulp-client
 ```
 
 Secondly redirect a stage and prod domains to localhost. If you are outside
@@ -122,22 +131,45 @@ To build the containers run the following command from **this directory**:
 docker compose build
 ```
 
+**NOTE** due to several issues with volumes 
+this project is **not compatible with podman**
+
 To run the containers:
 
 ```bash
-docker compose up
+sudo docker compose up
 ```
 
 ## Run the frontend
 
 The frontend has been removed as a container in favour of running it separately in order to leverage hot-reloading
-capabilities. In order to run the frontend with the backend you can run the following command:
+capabilities. In order to run the frontend with the backend you can run the following command
+in the `../image-builder-frontend` directory
 
 ```bash
+npm ci
 npm run devel
 ```
+
+You have to have a "staging account" in order to run this setup (although it's local).  
+Check if you can log in at https://console.stage.redhat.com/
 
 Access the service through the GUI:
 [https://stage.foo.redhat.com:1337/beta/insights/image-builder](https://stage.foo.redhat.com:1337/beta/insights/image-builder), or
 directly through the API:
 [https://stage.foo.redhat.com:1337/docs/api/image-builder](https://stage.foo.redhat.com:1337/docs/api/image-builder).
+
+## Debugging
+When you want to use your IDE (Integrated Development Environment) to debug the go-code you can check out the
+`GODEBUG_PORT` variables in [docker-composer.yml](./docker-composer.yml) and enable debugging for the supported
+layers.
+
+## Known Problems
+
+If you encounter problems with the certificate when you browse to
+[https://stage.foo.redhat.com:1337/preview/insights/image-builder](https://stage.foo.redhat.com:1337/preview/insights/image-builder)
+you might need to rebuild the certificates with:
+```
+make wipe-config
+```
+

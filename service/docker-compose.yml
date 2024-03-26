@@ -1,5 +1,3 @@
-version: '3.9'
-
 networks:
   net:
     ipam:
@@ -8,7 +6,7 @@ networks:
         - subnet: 172.31.0.0/16
 
 volumes:
-  config:
+  config_volume:
     driver_opts:
       type: none
       # this can be modified as desired
@@ -22,61 +20,13 @@ services:
       context: .
       dockerfile: ./config/Dockerfile-config
     volumes:
-      - config:/config
+      - config_volume:/config:z
       - ../../osbuild-composer/repositories:/config/repositories:z
 
-  composer:
-    image: local/osbuild-composer
-    build:
-      context: ../../osbuild-composer
-      dockerfile: ./distribution/Dockerfile-ubi
-    entrypoint:
-      [
-        "python3",
-        "/opt/entrypoint.py",
-        "--remote-worker-api",
-        "--composer-api"
-      ]
-    volumes:
-      - config:/etc/osbuild-composer
-    ports:
-      - 8080:8080
-      - 8700:8700
-    depends_on:
-      - config
-    networks:
-      net:
-        ipv4_address: 172.31.0.10
-
-  worker:
-    image: local/osbuild-worker
-    build:
-      context: ../../osbuild-composer
-      dockerfile: ./distribution/Dockerfile-worker
-    # override the entrypoint to specify composer hostname and port
-    entrypoint: [ "/usr/libexec/osbuild-composer/osbuild-worker", "composer:8700" ]
-    volumes:
-      - config:/etc/osbuild-composer
-      - config:/etc/osbuild-worker
-    environment:
-      - CACHE_DIRECTORY=/var/cache/osbuild-composer
-    privileged: true
-    cap_add:
-      - CAP_MKNOD
-      - SYS_ADMIN
-      - NET_ADMIN
-    depends_on:
-      - config
-      - composer
-    restart: on-failure
-    networks:
-      net:
-        ipv4_address: 172.31.0.20
-
-  postgres:
+  postgres_composer:
     image: docker.io/postgres:10.5
     healthcheck:
-      test: [ "CMD", "pg_isready", "-U", "postgres", "-d", "postgres" ]
+      test: [ "CMD", "pg_isready", "-h", "localhost", "-U", "postgres", "-d", "postgres" ]
       interval: 2s
       timeout: 2s
       retries: 10
@@ -84,30 +34,112 @@ services:
       - POSTGRES_USER=postgres
       - POSTGRES_PASSWORD=postgres
     volumes:
-      - ../../image-builder/internal/db/migrations-tern/:/docker-entrypoint-initdb.d/:Z
+      - ../../osbuild-composer/pkg/jobqueue/dbjobqueue/schemas/:/docker-entrypoint-initdb.d/:z
+    networks:
+      net:
+        ipv4_address: 172.31.0.80
+
+  composer:
+    image: osbuild-composer_devel
+    entrypoint:
+      [
+        "python3",
+        "/opt/entrypoint.py",
+        "--remote-worker-api",
+        "--composer-api"
+      ]
+    healthcheck:
+      test: ["CMD-SHELL", "if curl -k -s -o /dev/null -w '%{http_code}' https://localhost:8700/ | grep -q 401; then exit 0; else exit 1; fi"]
+      interval: 2s
+      timeout: 2s
+      retries: 100
+    environment:
+      - PGHOST=postgres_composer
+      - PGPORT=5432
+      - PGDATABASE=postgres
+      - PGUSER=postgres
+      - PGPASSWORD=postgres
+      - PGSSLMODE=disable
+      # only enable the GODEBUG_PORT if you want live debugging.
+      # you HAVE to attach a golang debugger to continue execution (check the logs after startup)
+      # - GODEBUG_PORT=7730
+    volumes:
+      - config_volume:/etc/osbuild-composer
+    ports:
+      - 8080:8080
+      - 8700:8700
+      - 7730:7730
+    depends_on:
+      config:
+        condition: service_completed_successfully
+      postgres_composer:
+        condition: service_healthy
+
+    networks:
+      net:
+        ipv4_address: 172.31.0.10
+
+  worker:
+    image: osbuild-worker_devel
+    volumes:
+      - config_volume:/etc/osbuild-composer:z
+      - config_volume:/etc/osbuild-worker:z
+    environment:
+      - CACHE_DIRECTORY=/var/cache/osbuild-composer
+      - WORKER_ARGS=composer:8700
+      # only enable the GODEBUG_PORT if you want live debugging.
+      # you HAVE to attach a golang debugger to continue execution (check the logs after startup)
+      # - GODEBUG_PORT=7740
+    ports:
+      - 7740:7740
+    privileged: true
+    cap_add:
+      - CAP_MKNOD
+      - SYS_ADMIN
+      - NET_ADMIN
+    depends_on:
+      config:
+        condition: service_completed_successfully
+      composer:
+        condition: service_healthy
+    restart: on-failure
+    networks:
+      net:
+        ipv4_address: 172.31.0.20
+
+  postgres_backend:
+    image: docker.io/postgres:10.5
+    healthcheck:
+      test: [ "CMD", "pg_isready", "-h", "localhost", "-U", "postgres", "-d", "postgres" ]
+      interval: 2s
+      timeout: 2s
+      retries: 10
+    environment:
+      - POSTGRES_USER=postgres
+      - POSTGRES_PASSWORD=postgres
+    volumes:
+      - ../../image-builder/internal/db/migrations-tern/:/docker-entrypoint-initdb.d/:z
     networks:
       net:
         ipv4_address: 172.31.0.30
 
   backend:
-    image: local/image-builder
-    build:
-      context: ../../image-builder
-      dockerfile: ./distribution/Dockerfile-ubi
+    image: image-builder_devel
     ports:
       - 8086:8086
+      - 7720:7720
     healthcheck:
       test: [ "CMD", "curl", "localhost:8086/status" ]
       interval: 2s
       timeout: 2s
-      retries: 10
+      retries: 100
     volumes:
-      - config:/etc/image-builder
+      - config_volume:/etc/image-builder
     environment:
       - LISTEN_ADDRESS=backend:8086
       - LOG_LEVEL=DEBUG
       - ALLOWED_ORG_IDS=*
-      - PGHOST=postgres
+      - PGHOST=postgres_backend
       - PGPORT=5432
       - PGDATABASE=postgres
       - PGUSER=postgres
@@ -119,10 +151,16 @@ services:
       - COMPOSER_CA_PATH=/etc/image-builder/ca-crt.pem
       - DISTRIBUTIONS_DIR=/app/distributions
       - QUOTA_FILE=/etc/image-builder/quotas.json
+      # only enable the GODEBUG_PORT if you want live debugging.
+      # you HAVE to attach a golang debugger to continue execution (check the logs after startup)
+      # - GODEBUG_PORT=7720
     depends_on:
-      - config
-      - composer
-      - postgres
+      config:
+        condition: service_completed_successfully
+      composer:
+        condition: service_healthy
+      postgres_backend:
+        condition: service_healthy
     restart: on-failure
     networks:
       net:
@@ -132,10 +170,12 @@ services:
     image: local/osbuild-fauxauth
     build:
       context: ../../osbuild-composer
-      dockerfile: ./distribution/Dockerfile-fauxauth
+      dockerfile: ./distribution/Dockerfile-fauxauth_srcinstall
+      args:
+        GOMODARGS: "-modfile=go.local.mod"
     entrypoint: [ "/opt/fauxauth.py", "-a", "0.0.0.0", "-p", "8888" ]
     volumes:
-      - config:/etc/osbuild-composer
+      - config_volume:/etc/osbuild-composer
     ports:
       - 8888:8888
     depends_on:
@@ -145,22 +185,39 @@ services:
         ipv4_address: 172.31.0.50
 
   minio:
-    image: minio/minio:latest
+    image: docker.io/minio/minio:latest
     volumes:
       # this can be modified as desired
-      - /scratch/data:/data:z
+      - /scratch/data/s3:/data:z
     command: server /data --console-address ":9090"
+    working_dir: /data
     environment:
-    - MINIO_ROOT_USER=admin
-    - MINIO_ROOT_PASSWORD=password42
+      - MINIO_ROOT_USER=admin
+      - MINIO_ROOT_PASSWORD=password42
     ports:
       - 9000:9000
-      - 9090:9090
+      - 9091:9090
     healthcheck:
-      test: ["CMD", "curl", "-f", "http://localhost:9000/minio/health/live"]
+      test: [ "CMD", "curl", "-f", "http://localhost:9000/minio/health/live" ]
       interval: 30s
       timeout: 20s
       retries: 3
     networks:
       net:
         ipv4_address: 172.31.0.60
+
+  frontend:
+    image: image-builder-frontend_devel
+    environment:
+      - BACKEND_HOSTNAME=backend
+    ports:
+      - 1337:1337
+      - 8002:8002
+    volumes:
+      - ../../image-builder-frontend/api:/app/api:z
+      - ../../image-builder-frontend/config:/app/config:z
+      - ../../image-builder-frontend/src:/app/src:z
+    networks:
+      net:
+        ipv4_address: 172.31.0.70
+
