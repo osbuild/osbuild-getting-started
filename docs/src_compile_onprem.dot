@@ -1,0 +1,101 @@
+digraph src_compile {
+    newrank=true;
+    subgraph cluster_osbuild_getting_started {
+        node [ shape=box; fillcolor=white; style=filled; ]
+        style=filled; fillcolor=lightgrey;
+
+        label = "osbuild-\ngetting-started";
+        osbuild_getting_started_makefile [
+          label = "make\nonprem-containers"
+          width = 2;
+        ];
+        osbuild_getting_started_run [
+          label = "make\nrun-onprem"
+          width = 2;
+        ];
+    }
+
+    subgraph cluster_osbuild {
+        node [ shape=box; fillcolor=white; style=filled; ]
+        style=filled; fillcolor=lightgrey;
+
+        label = "osbuild\n&nbsp;";
+        osbuild_makefile [
+          label = "make\ncontainer";
+          width = 1.5;
+        ];
+    }
+
+    subgraph cluster_osbuild_composer {
+        node [ shape=box; fillcolor=white; style=filled; ]
+        style=filled; fillcolor=lightgrey;
+
+        label = "osbuild-composer\n&nbsp;";
+        osbuild_composer_makefile_composer [
+          label = "make\ncontainer_composer"
+          width = 2;
+        ];
+        osbuild_composer_makefile_worker [
+          label = "make\ncontainer_worker"
+          width = 2;
+        ];
+
+        osbuild_composer_go [ label = "go code"; ];
+    }
+
+    subgraph cluster_weldr_client {
+        node [ shape=box; fillcolor=white; style=filled; ]
+        style=filled; fillcolor=lightgrey;
+
+        label = "weldr-client";
+        weldr_client_makefile [
+          label = "make\ncontainer"
+          width = 1.5;
+        ];
+    }
+    subgraph cluster_pulp_client {
+        node [ shape=box; fillcolor=white; style=filled; ]
+        style=filled; fillcolor=lightgrey;
+
+        label = "pulp-client";
+        pulp_client_go [
+          label = "go code";
+          width = 1.5;
+        ];
+    }
+    subgraph cluster_images {
+        node [ shape=box; fillcolor=white; style=filled; ]
+        style=filled; fillcolor=lightgrey;
+
+        label = "images";
+        images_go [label = "go code";];
+    }
+    { rank=same;
+      osbuild_makefile;
+      osbuild_composer_makefile_worker;
+      osbuild_composer_makefile_composer;
+      weldr_client_makefile;
+
+    }
+    { rank=same;
+        edge [style=dashed; headport=s; tailport=s];
+        pulp_client_go;
+        images_go;
+    }
+    osbuild_composer_go -> pulp_client_go [style=dashed;];
+    osbuild_composer_go -> images_go [style=dashed;];
+
+    osbuild_getting_started_run -> osbuild_getting_started_makefile;
+
+    osbuild_getting_started_makefile -> osbuild_makefile;
+    osbuild_getting_started_makefile -> osbuild_composer_makefile_worker;
+    osbuild_getting_started_makefile -> osbuild_composer_makefile_composer;
+
+
+    osbuild_getting_started_makefile -> weldr_client_makefile;
+    osbuild_composer_makefile_worker -> osbuild_composer_go [style=dashed];
+    osbuild_composer_makefile_composer -> osbuild_composer_go [style=dashed];
+
+    osbuild_composer_makefile_worker -> osbuild_makefile [style=dashed; headport=s; tailport=s];
+
+}

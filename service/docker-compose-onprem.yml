@@ -1,0 +1,148 @@
+networks:
+  onpremnet:
+    ipam:
+      driver: default
+      config:
+        - subnet: 172.31.0.0/16
+
+volumes:
+  config_volume:
+    driver_opts:
+      type: none
+      # this can be modified as desired
+      device: /scratch/podman/image-builder-config
+      o: bind
+  weldr_volume:
+    driver_opts:
+      type: none
+      # this can be modified as desired
+      device: /scratch/podman/weldr
+      o: bind
+  cloudapi_volume:
+    driver_opts:
+      type: none
+      # this can be modified as desired
+      device: /scratch/podman/cloudapi
+      o: bind
+  dnfjson_volume:
+    driver_opts:
+      type: none
+      # this can be modified as desired
+      device: /scratch/podman/dnf-json
+      o: bind
+
+services:
+  config:
+    image: local/config
+    build:
+      context: .
+      dockerfile: ./config/Dockerfile-config-onprem
+    volumes:
+      - config_volume:/config:z
+      - ../../osbuild-composer/repositories:/repositories:z
+
+  composer:
+    image: osbuild-composer_devel
+    entrypoint:
+      [
+        "python3",
+        "/opt/entrypoint.py",
+        "--weldr-api",
+        "--remote-worker-api",
+        "--composer-api",
+        "--composer-api-port", "8000",
+      ]
+    healthcheck:
+      test: ["CMD-SHELL", "curl -k -s --cert /etc/osbuild-composer/worker-crt.pem --key /etc/osbuild-composer/worker-key.pem -o /dev/null https://localhost:8700/api/worker/v1/status"]
+      interval: 2s
+      timeout: 2s
+      retries: 100
+    environment:
+      - PGHOST=postgres_composer
+      - PGPORT=5432
+      - PGDATABASE=postgres
+      - PGUSER=postgres
+      - PGPASSWORD=postgres
+      - PGSSLMODE=disable
+      # only enable the GODEBUG_PORT if you want live debugging.
+      # you HAVE to attach a golang debugger to continue execution (check the logs after startup)
+      # - GODEBUG_PORT=7730
+    volumes:
+      - config_volume:/etc/osbuild-composer
+      - weldr_volume:/run/weldr:rw,z
+      - cloudapi_volume:/run/cloudapi:rw,z
+      - dnfjson_volume:/run/osbuild-dnf-json:rw,z
+    ports:
+      - 8080:8080
+      - 8700:8700
+      - 7730:7730
+    depends_on:
+      config:
+        condition: service_completed_successfully
+      postgres_composer:
+        condition: service_healthy
+
+    networks:
+      onpremnet:
+        ipv4_address: 172.31.0.10
+
+  worker:
+    image: osbuild-worker_devel
+    volumes:
+      - config_volume:/etc/osbuild-composer:z
+      - config_volume:/etc/osbuild-worker:z
+    environment:
+      - CACHE_DIRECTORY=/var/cache/osbuild-composer
+      - WORKER_ARGS=composer:8700
+      # only enable the GODEBUG_PORT if you want live debugging.
+      # you HAVE to attach a golang debugger to continue execution (check the logs after startup)
+      # - GODEBUG_PORT=7740
+    ports:
+      - 7740:7740
+    privileged: true
+    cap_add:
+      - CAP_MKNOD
+      - SYS_ADMIN
+      - NET_ADMIN
+    depends_on:
+      config:
+        condition: service_completed_successfully
+      composer:
+        condition: service_healthy
+    restart: on-failure
+    networks:
+      onpremnet:
+        ipv4_address: 172.31.0.20
+
+  postgres_composer:
+    image: docker.io/postgres:10.5
+    healthcheck:
+      test: [ "CMD", "pg_isready", "-U", "postgres", "-d", "postgres" ]
+      interval: 2s
+      timeout: 2s
+      retries: 10
+    environment:
+      - POSTGRES_USER=postgres
+      - POSTGRES_PASSWORD=postgres
+    volumes:
+      - ../../osbuild-composer/pkg/jobqueue/dbjobqueue/schemas/:/docker-entrypoint-initdb.d/:z
+    networks:
+      onpremnet:
+        ipv4_address: 172.31.0.30
+
+  cli:
+    image: osbuild-cli_devel
+    volumes:
+      - config_volume:/etc/osbuild-composer:z
+      - weldr_volume:/run/weldr:rw,z
+      - dnfjson_volume:/run/osbuild-dnf-json:rw,z
+      - ./config/cli/data:/data
+    #environment:
+      # only enable the GODEBUG_PORT if you want live debugging.
+      # you HAVE to attach a golang debugger to continue execution (check the logs after startup)
+      # - GODEBUG_PORT=7750
+    networks:
+      onpremnet:
+        ipv4_address: 172.31.0.40
+    entrypoint:
+      [ "/usr/bin/true" ] # will be started interactively from Makefile
