@@ -47,6 +47,7 @@ async def env(
 
     with tempfile.TemporaryDirectory() as path_tmp:
         os.mkdir(f"{path_tmp}/weldr")
+        os.mkdir(f"{path_tmp}/cloudapi")
         os.mkdir(f"{path_tmp}/dnf-json")
 
         print(f"run.py: env: starting `composer` container at {osbuild_composer_version!r}")
@@ -57,6 +58,7 @@ async def env(
             "--rm",
             "--volume", f"{path_config}:/etc/osbuild-composer:ro,z",
             "--volume", f"{path_tmp}/weldr:/run/weldr:rw,z",
+            "--volume", f"{path_tmp}/cloudapi:/run/cloudapi:rw,z",
             "--volume", f"{path_tmp}/dnf-json:/run/osbuild-dnf-json:rw,z",
             "--network", "podman",
             "--name", f"{prefix}-composer",

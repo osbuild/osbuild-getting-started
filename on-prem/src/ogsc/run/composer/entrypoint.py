@@ -180,6 +180,18 @@ class Cli(contextlib.AbstractContextManager):
             sock.bind("/run/weldr/api.socket")
             sock.listen()
             sockets.append(sock)
+
+            names.append("osbuild-composer.socket")
+
+            assert(sock.fileno() == index)
+            index += 1
+
+            sock = socket.socket(socket.AF_UNIX, socket.SOCK_STREAM)
+            self._exitstack.enter_context(contextlib.closing(sock))
+            sock.bind("/run/cloudapi/api.socket")
+            sock.listen()
+            sockets.append(sock)
+
             names.append("osbuild-composer.socket")
 
             assert(sock.fileno() == index)
