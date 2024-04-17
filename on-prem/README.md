@@ -33,6 +33,14 @@ Compose ec2dab95-4ab7-4674-aa2d-27f992a42922 added to the queue
 ec2dab95-4ab7-4674-aa2d-27f992a42922 FINISHED Tue Jun 7 09:59:39 2022 example-image   0.0.1 oci              2147483648
 ```
 
+To run a different version you can provide the version information as follows:
+
+```
+make run osbuild_version=v114 osbuild_composer_version=v104 weldr_client_version=v35.11
+```
+
+NOTE: always run as root as we need many permissions to build an image
+
 ## Build
 
 Docker is used to build the RPMs, to get started make sure your host system
