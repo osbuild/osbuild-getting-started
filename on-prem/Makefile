@@ -61,7 +61,11 @@ config/osbuild-composer: build/osbuild-composer ## Configure the osbuild-compose
 		--volume $(shell pwd)/build/rpms/:/build/osbuild-composer/rpmbuild/RPMS/x86_64/:rw,Z \
 		--volume $(shell pwd)/build/config/:/build/config/:rw,Z \
 		$(PREFIX_BUILD)/osbuild-composer:$(osbuild_composer_version) \
-		bash -c './tools/gen-certs.sh ./test/data/x509/openssl.cnf /build/config /build/config/ca 2>&1 > /dev/null && cp ./test/data/composer/osbuild-composer*.toml /build/config && cp ./test/data/worker/osbuild-worker*.toml /build/config && cp -r ./repositories /build/config'
+		bash -c './tools/gen-certs.sh ./test/data/x509/openssl.cnf /build/config /build/config/ca 2>&1 > /dev/null && \
+		        cp ./test/data/composer/osbuild-composer*.toml /build/config && \
+		        cp ./test/data/worker/osbuild-worker*.toml /build/config && \
+		        cp -r ./repositories /build/config && \
+		        cp /build/config/osbuild-composer-tls.toml /build/config/osbuild-composer.toml'
 
 .PHONY: build/weldr-client
 build/weldr-client: ## Build the container for building the weldr-client rpms
