@@ -31,6 +31,27 @@ async def stop(process, timeout=5.0):
         process.kill()
 
 
+def tree(dir_path: Path, prefix: str = ''):
+    """A recursive generator, given a directory Path object
+    will yield a visual tree structure line by line
+    with each line prefixed by the same characters
+    """
+    space = '    '
+    branch = '│   '
+    tee = '├── '
+    last = '└── '
+
+    contents = list(dir_path.iterdir())
+    # contents each get pointers that are ├── with a final └── :
+    pointers = [tee] * (len(contents) - 1) + [last]
+    for pointer, path in zip(pointers, contents):
+        yield prefix + pointer + path.name
+        if path.is_dir(): # extend the prefix and recurse:
+            extension = branch if pointer == tee else space
+            # i.e. space because last, └── , above so no more |
+            yield from tree(path, prefix=prefix+extension)
+
+
 async def env(
     osbuild_version,
     osbuild_composer_version,
@@ -140,6 +161,12 @@ async def env(
             await cli.wait()
 
             await asyncio.gather(stop(composer), stop(worker))
+        print("\nLogs are here")
+        print(path_tmp)
+        for line in tree(Path(path_tmp)):
+            print(line)
+        print("Inspect them now, then press [ENTER] to remove them")
+        input()
 
     return 0
 
