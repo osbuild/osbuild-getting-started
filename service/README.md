@@ -8,25 +8,30 @@ with loop devices etc. where root privileges are required.
 
 ## Setup
 
-To start local development, first clone the image builder stack:
+To start local development, first clone the image builder stack and all it's dependent source.
 
 ```bash
-git clone git@github.com:osbuild/osbuild-composer.git
-git clone git@github.com:osbuild/image-builder.git
-git clone git@github.com:osbuild/osbuild-getting-started.git
+git clone git@github.com:osbuild/community-gateway.git
 git clone git@github.com:osbuild/image-builder-frontend.git
+git clone git@github.com:osbuild/image-builder.git
+git clone git@github.com:osbuild/images.git
+git clone git@github.com:osbuild/osbuild-composer.git
+git clone git@github.com:osbuild/osbuild-getting-started.git
 git clone git@github.com:osbuild/osbuild.git
 git clone git@github.com:osbuild/pulp-client.git
 ```
 
-The folder structure should look like:
+The folder structure should look like this:
 
 ```
 .
+├── community-gateway
 ├── image-builder
 ├── image-builder-frontend
-├── osbuild-getting-started
+├── images
+├── osbuild
 ├── osbuild-composer
+├── osbuild-getting-started
 └── pulp-client
 ```
 
@@ -64,7 +69,7 @@ command.
 
 ## Upload Targets
 
-Upload targets need to be configued for the Image Builder backend to upload successfully.
+Upload targets need to be configured for the Image Builder backend to upload successfully.
 This stack comes pre-configured with a generic S3 bucket which can be accessed at:
 
 `http://localhost:9000`
@@ -104,51 +109,39 @@ The config variables for the worker can be found [here](https://github.com/osbui
 *NOTE:* If you change the config files, you will either need to modify the worker config in the `/scratch/podman/image-builder-config` file and restart
 the containers. Alternatively, you will need to remove the named volume and rebuild the config container. The steps for this are
 as follows:
-Run the following from **this directory**.
+Run the following from the main **osbuild-getting-started directory** (one level above where this README.md is).
+
+```bash
+make help
+```
+ 
 - stop the containers and remove volumes
 
 ```bash
-docker compose down -v
+make prune-service
 ```
 
-- rebuild the config container
+- rebuild containers
 
 ```bash
-docker compose build config
+make service-containers
 ```
 
 - start the containers again
 
 ```bash
-docker compose up
+make run-service
 ```
 
-## Run the backend
+## Run the frontend separately
 
-To build the containers run the following command from **this directory**:
-
-```bash
-docker compose build
-```
-
-**NOTE** due to several issues with volumes 
-this project is **not compatible with podman**
-
-To run the containers:
+The command above (`make run-service`) also starts the frontend by bind-mounting the source
+from your computer, so hot-reload of `npm` should work.
+If you want to run the frontend yourself (see the [README.md](https://github.com/osbuild/image-builder-frontend/blob/main/README.md) there)
+you can use the make target:
 
 ```bash
-sudo docker compose up
-```
-
-## Run the frontend
-
-The frontend has been removed as a container in favour of running it separately in order to leverage hot-reloading
-capabilities. In order to run the frontend with the backend you can run the following command
-in the `../image-builder-frontend` directory
-
-```bash
-npm ci
-npm run devel
+make run-service-no-fronted
 ```
 
 You have to have a "staging account" in order to run this setup (although it's local).  

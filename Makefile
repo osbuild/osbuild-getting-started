@@ -5,9 +5,15 @@ help:
 	@echo "This is the makefile of osbuild-getting-started. The following"
 	@echo "targets are available:"
 	@echo
-	@echo "    service-containers: Build all needed containers from source to be able to run the service"
-	@echo "    run-service:        Run all containers to needed for the 'service'"
-	@echo "    clean:              Clean all subprojects to assure a rebuild"
+	@echo "  service-containers:      Build all needed containers from source to be able to run the service"
+	@echo "  run-service:             Run all containers needed for the 'service'"
+	@echo "                           This is running in foreground. Use CTRL-C to stop the containers."
+	@echo "  run-service-no-frontend: Run all containers except for the frontend"
+	@echo "  stop-service:            Usually the containers get stopped by CTRL-C. So 'stop-service'"
+	@echo "                           is only needed if something strange happened and not all are stopped."
+	@echo "  prune-service:           Remove the containers, including the test-data!"
+	@echo "                           If you want empty databases"
+	@echo "  clean:                   Clean all subprojects to assure a rebuild"
 
 # source where the other repos are locally
 # has to end with a trailing slash
