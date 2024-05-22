@@ -110,6 +110,8 @@ wipe-config:
 clean: $(COMMON_SRC_DEPS_ORIGIN) $(SERVICE_SRC_DEPS_ORIGIN) $(ONPREM_SRC_DEPS_ORIGIN) wipe-config
 	rm -f service_images_built.info
 	rm -f onprem_images_built.info
+	rm -f vm_image_built.info
+	rm -f vm_defined.info
 	for DIR in $*; do $(MAKE_SUB_CALL) -C $$DIR clean; done
 	$(CONTAINER_COMPOSE_EXECUTABLE) -f service/docker-compose.yml rm
 	$(CONTAINER_COMPOSE_EXECUTABLE) -f service/docker-compose-onprem.yml rm
@@ -175,3 +177,78 @@ else
 	sudo -u ${SUDO_USER} ./git_stack.sh fetch --all
 endif
 	@./git_stack.sh
+
+
+BLUEPRINT = osbuild-getting-started-fedora39.toml
+# patch the BLUEPRINT with the current user ID
+# we need this because the user in the VM directly writes to
+# the mapped source directory
+$(BLUEPRINT): $(BLUEPRINT:.toml=.toml.template)
+	cp $< $@
+	sed -i -E "s|(uid *= *)(.+)|\1$$(id -u)|g" $@
+	sed -i -E "s|(gid *= *)(.+)|\1$$(id -g)|g" $@
+
+.ONESHELL:
+.SILENT:
+vm_image_built.info: $(BLUEPRINT) osbuild-getting-started-fedora39.xml.template
+	echo "Pushing blueprint '$(BLUEPRINT)' to composer to create a virtual machine for development"
+	composer-cli blueprints push $(BLUEPRINT)
+	# start building
+	export COMPOSE_ID="$$(composer-cli compose start osbuild-getting-started-fedora-39 qcow2|awk 'NR==1 {print $$2}')"
+
+	echo "Compose id: $${COMPOSE_ID} started"
+	echo "Waiting for osbuild to create our virtual machine"
+	sleep 2
+	while true; do \
+	    export STATUS="$$(composer-cli compose info $${COMPOSE_ID}| awk 'NR==1 {print $$2}')" ; \
+	    if [[ "$$STATUS" != "RUNNING" && "$$STATUS" != "WAITING" ]]; then echo " $$STATUS"; break; fi; \
+		echo -n "."; sleep 1; \
+	done ;
+
+	echo "Getting qcow2 image"
+	composer-cli compose image "$${COMPOSE_ID}"
+
+	echo "$${COMPOSE_ID}" > $@
+
+VM_XML = osbuild-getting-started-fedora39.xml
+$(VM_XML): $(VM_XML:.xml=.xml.template) vm_image_built.info
+	cp $< $@
+	sed -i -E "s|REPLACEME_QCOW2|$$(pwd)/$$(cat vm_image_built.info)-disk.qcow2|" osbuild-getting-started-fedora39.xml
+	sed -i -E "s|REPLACEME_HOST_DATA|$$(readlink -f ..)|" osbuild-getting-started-fedora39.xml
+	sed -i -E "s|REPLACEME_HOST_GO_CACHE|$$(readlink -f $${GOPATH:-$$HOME/go})|" osbuild-getting-started-fedora39.xml
+
+.ONESHELL:
+.SILENT:
+vm_defined.info: $(VM_XML)
+	echo "Using 'virsh' as root to define the virtual machine"
+	-sudo virsh destroy osbuild-getting-started-fedora39
+	-sudo virsh undefine osbuild-getting-started-fedora39
+	sudo virsh define osbuild-getting-started-fedora39.xml
+
+	echo "VM last defined on" > $@
+	date >> $@
+
+.PHONY: start-vm
+.ONESHELL:
+start-vm: vm_defined.info
+	@echo "Starting the virtual machine"
+	sudo virsh start osbuild-getting-started-fedora39
+	export MAC=$$(awk -F '"' '/mac address/{print $$2}' osbuild-getting-started-fedora39.xml)
+	export IP="$$(sudo virsh net-dhcp-leases default | awk "/$$MAC/ {split(\$$5, a, \"/\"); print a[1]}")"
+	@echo -e "\nYou can now login with:"
+	@echo "ssh -o \"UserKnownHostsFile=/dev/null\" -o \"StrictHostKeyChecking=no\" -o \"LogLevel=ERROR\" osbuild@$$IP"
+
+.PHONY: stop-vm
+.ONESHELL:
+stop-vm:
+	sudo virsh destroy osbuild-getting-started-fedora39
+
+.PHONY: recompile
+.ONESHELL:
+recompile:
+	export MAC=$$(awk -F '"' '/mac address/{print $$2}' osbuild-getting-started-fedora39.xml)
+	export IP="$$(sudo virsh net-dhcp-leases default | awk "/$$MAC/ {split(\$$5, a, \"/\"); print a[1]}")"
+	export CMD="ssh -o \"UserKnownHostsFile=/dev/null\" -o \"StrictHostKeyChecking=no\" -o \"LogLevel=ERROR\" osbuild@$$IP"
+	echo "Installing osbuild"
+	bash -c "$$CMD 'cd /workspaces/osbuild ; make rpm-devel'"
+	bash -c "$$CMD 'sudo rpm -i /workspaces/osbuild/rpmbuild/RPMS/*.rpm' || echo 'OK, already installed'"
