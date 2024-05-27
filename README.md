@@ -49,6 +49,9 @@ provide more in-depth explainations of these products, their architecture and ho
 
 ## Getting started
 
+You can develop and install the individual components on your local computer, or you can run the
+whole stack as containers fully from source.
+
 For further instructions on how to run containerized versions of the CLI and service locally:
-- the [on-premise README](./on-prem/README.md) offers explainations on how to run the on-premise CLI tool.
+- the [on-premise README](./on-prem/README.md) offers explanations on how to run the on-premise CLI tool.
 - the [service README](./service/README.md) provides instructions on how to get started with a stack of the hosted service.

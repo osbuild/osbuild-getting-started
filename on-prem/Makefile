@@ -61,7 +61,11 @@ config/osbuild-composer: build/osbuild-composer ## Configure the osbuild-compose
 		--volume $(shell pwd)/build/rpms/:/build/osbuild-composer/rpmbuild/RPMS/x86_64/:rw,Z \
 		--volume $(shell pwd)/build/config/:/build/config/:rw,Z \
 		$(PREFIX_BUILD)/osbuild-composer:$(osbuild_composer_version) \
-		bash -c './tools/gen-certs.sh ./test/data/x509/openssl.cnf /build/config /build/config/ca 2>&1 > /dev/null && cp ./test/data/composer/osbuild-composer*.toml /build/config && cp ./test/data/worker/osbuild-worker*.toml /build/config && cp -r ./repositories /build/config'
+		bash -c './tools/gen-certs.sh ./test/data/x509/openssl.cnf /build/config /build/config/ca 2>&1 > /dev/null && \
+		        cp ./test/data/composer/osbuild-composer*.toml /build/config && \
+		        cp ./test/data/worker/osbuild-worker*.toml /build/config && \
+		        cp -r ./repositories /build/config && \
+		        cp /build/config/osbuild-composer-tls.toml /build/config/osbuild-composer.toml'
 
 .PHONY: build/weldr-client
 build/weldr-client: ## Build the container for building the weldr-client rpms
@@ -86,6 +90,7 @@ run/composer: # Launch the osbuild-composer container
 	podman build \
 		--volume $(shell pwd)/build/rpms:/rpms:ro,Z \
 		--build-arg osbuild_composer_version=${osbuild_composer_version_x} \
+		--build-arg osbuild_version=${osbuild_version_x} \
 		-t $(PREFIX_RUN)/composer:$(osbuild_composer_version) \
 		src/ogsc/run/composer
 
@@ -131,4 +136,5 @@ help:
 	@echo '  make <target>'
 	@echo ''
 	@echo 'Targets:'
-	@grep -E '^[a-zA-Z_\/-]+:.*?## .*$$' $(MAKEFILE_LIST) | sort | awk 'BEGIN {FS = ":.*?## "}; {printf "\033[36m%-30s\033[0m %s\n", $$1, $$2}'
+	@awk 'match($$0, /^([a-zA-Z_\/-]+):.*?## (.*)$$/, m) {printf "  \033[36m%-30s\033[0m %s\n", m[1], m[2]}' $(MAKEFILE_LIST) | sort | grep -v "/"
+	@awk 'match($$0, /^([a-zA-Z_\/-]+):.*?## (.*)$$/, m) {printf "  \033[36m%-30s\033[0m %s\n", m[1], m[2]}' $(MAKEFILE_LIST) | sort | grep "/"

@@ -4,3 +4,11 @@ on-prem/build/config/*.pem
 on-prem/build/config/*.toml
 on-prem/build/config/ca
 on-prem/build/config/repositories
+service_images_built.info
+onprem_images_built.info
+vm_defined.info
+vm_image_built.info
+
+*.qcow2
+osbuild-getting-started-*.toml
+osbuild-getting-started-*.xml

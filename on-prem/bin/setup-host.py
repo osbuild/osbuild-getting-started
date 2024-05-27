@@ -4,18 +4,15 @@
 # of setting up all required dependencies on the host to run osbuild services in
 # containers.
 
-import sys
-import subprocess
 import logging
-
+import subprocess
+import sys
 
 log = logging.getLogger(__name__)
 
 
 # The base set of packages necessary.
-package_base = {
-    "git"
-}
+package_base = {"git"}
 
 package_set = {
     "container": {
@@ -25,11 +22,14 @@ package_set = {
 
 
 def package_install(packages):
-    subprocess.run([
-        "dnf",
-        "in",
-        "-y",
-    ] + list(packages))
+    subprocess.run(
+        [
+            "dnf",
+            "in",
+            "-y",
+        ]
+        + list(packages)
+    )
 
     return 0
 

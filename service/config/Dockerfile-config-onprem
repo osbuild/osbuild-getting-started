@@ -6,8 +6,8 @@ RUN mkdir -p /config_build
 COPY ./tools/gen-certs.sh .
 COPY ./config/x509/openssl.cnf .
 COPY ./config/composer/acl.yml /config_build/.
-COPY ./config/composer/osbuild-composer.toml /config_build/.
-COPY ./config/worker/osbuild-worker.toml /config_build/.
+COPY ./config/composer/osbuild-composer-onprem.toml /config_build/osbuild-composer.toml
+# COPY ./config/worker/osbuild-worker-onprem.toml /config_build/osbuild-worker.toml
 COPY ./config/worker/s3-credentials /config_build/.
 COPY ./config/worker/secret /config_build/.
 COPY ./config/backend/quotas.json /config_build
@@ -18,4 +18,4 @@ ENV CONFIG_BUILD_DATE=$CONFIG_BUILD_DATE
 
 RUN ./gen-certs.sh ./openssl.cnf /config_build /config_build/ca
 
-CMD cp -r /config_build/* /config/ && echo "Done. Provided the config to all other containers."
+CMD cp -r /config_build/* /config/ && cp -r /repositories /config/ && echo "Done. Provided the config to all other containers."

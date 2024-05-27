@@ -31,6 +31,27 @@ async def stop(process, timeout=5.0):
         process.kill()
 
 
+def tree(dir_path: Path, prefix: str = ''):
+    """A recursive generator, given a directory Path object
+    will yield a visual tree structure line by line
+    with each line prefixed by the same characters
+    """
+    space = '    '
+    branch = '│   '
+    tee = '├── '
+    last = '└── '
+
+    contents = list(dir_path.iterdir())
+    # contents each get pointers that are ├── with a final └── :
+    pointers = [tee] * (len(contents) - 1) + [last]
+    for pointer, path in zip(pointers, contents):
+        yield prefix + pointer + path.name
+        if path.is_dir(): # extend the prefix and recurse:
+            extension = branch if pointer == tee else space
+            # i.e. space because last, └── , above so no more |
+            yield from tree(path, prefix=prefix+extension)
+
+
 async def env(
     osbuild_version,
     osbuild_composer_version,
@@ -46,87 +67,105 @@ async def env(
     path_cache = Path.cwd() / "run"
 
     with tempfile.TemporaryDirectory() as path_tmp:
-        os.mkdir(f"{path_tmp}/weldr")
-        os.mkdir(f"{path_tmp}/dnf-json")
 
-        print(f"run.py: env: starting `composer` container at {osbuild_composer_version!r}")
+        os.mkdir(f"{path_tmp}/logs")
 
-        composer = await asyncio.create_subprocess_exec(
-            "podman",
-            "run",
-            "--rm",
-            "--volume", f"{path_config}:/etc/osbuild-composer:ro,z",
-            "--volume", f"{path_tmp}/weldr:/run/weldr:rw,z",
-            "--volume", f"{path_tmp}/dnf-json:/run/osbuild-dnf-json:rw,z",
-            "--network", "podman",
-            "--name", f"{prefix}-composer",
-            f"ogsc/run/composer:{osbuild_composer_version}",
-            "--dnf-json",
-            "--weldr-api",
-            "--remote-worker-api",
-            "--composer-api",
-            "--composer-api-port", "8000",
-            stdout=asyncio.subprocess.PIPE,
-            stderr=asyncio.subprocess.PIPE,
-        )
+        with open(f"{path_tmp}/logs/composer.stdout.log", 'w') as composer_stdout, \
+             open(f"{path_tmp}/logs/composer.stderr.log", 'w') as composer_stderr, \
+             open(f"{path_tmp}/logs/worker.stdout.log", 'w') as worker_stdout, \
+             open(f"{path_tmp}/logs/worker.stderr.log", 'w') as worker_stderr:
 
-        # XXX: silly stuff :)
-        await asyncio.sleep(5)
+            os.mkdir(f"{path_tmp}/weldr")
+            os.mkdir(f"{path_tmp}/cloudapi")
+            os.mkdir(f"{path_tmp}/dnf-json")
 
-        composer_inspect = await asyncio.create_subprocess_exec(
-            "podman",
-            "inspect",
-            f"{prefix}-composer",
-            "-f", "{{ .NetworkSettings.Networks.podman.IPAddress }}",
-            stdout=asyncio.subprocess.PIPE,
-            stderr=asyncio.subprocess.PIPE,
-        )
-        composer_ip = (await composer_inspect.stdout.readline()).decode().strip()
-        await composer_inspect.wait()
+            print(f"\nrun.py: env: temporary sockets and logs are going to {path_tmp}")
+            print(f"run.py: env: starting `composer` container at {osbuild_composer_version!r}")
 
-        print(f"run.py: env: `composer` container has ip {composer_ip!r}")
-        print(f"run.py: env: starting `worker` container at {osbuild_composer_version!r}/{osbuild_version!r}")
+            composer = await asyncio.create_subprocess_exec(
+                "podman",
+                "run",
+                "--rm",
+                "--volume", f"{path_config}:/etc/osbuild-composer:ro,z",
+                "--volume", f"{path_tmp}/weldr:/run/weldr:rw,z",
+                "--volume", f"{path_tmp}/cloudapi:/run/cloudapi:rw,z",
+                "--volume", f"{path_tmp}/dnf-json:/run/osbuild-dnf-json:rw,z",
+                "--network", "podman",
+                "--name", f"{prefix}-composer",
+                f"ogsc/run/composer:{osbuild_composer_version}",
+                "--weldr-api",
+                "--remote-worker-api",
+                "--composer-api",
+                "--composer-api-port", "8000",
+                stdout=composer_stdout,
+                stderr=composer_stderr,
+            )
 
-        worker = await asyncio.create_subprocess_exec(
-            "podman",
-            "run",
-            "--rm",
-            "--privileged",
-            "--volume", f"{path_config}:/etc/osbuild-composer:ro,z",
-            "--volume", f"{path_run}:/run/osbuild:rw,z",
-            "--volume", f"{path_cache}:/var/cache/osbuild-worker:rw,z",
-            "--volume", f"/dev:/dev,z",
-            "--network", "podman",
-            "--add-host", f"composer:{composer_ip}",
-            "--name", f"{prefix}-worker",
-            "--env", "CACHE_DIRECTORY=/var/cache/osbuild-worker",
-            f"ogsc/run/worker:{osbuild_composer_version}_{osbuild_version}",
-            "composer:8700",
-            stdout=asyncio.subprocess.PIPE,
-            stderr=asyncio.subprocess.PIPE,
-        )
-        await asyncio.sleep(5)
+            # XXX: silly stuff :)
+            await asyncio.sleep(5)
 
-        print(f"run.py: env: starting `cli` container at {weldr_client_version!r}")
+            composer_inspect = await asyncio.create_subprocess_exec(
+                "podman",
+                "inspect",
+                f"{prefix}-composer",
+                "-f", "{{ .NetworkSettings.Networks.podman.IPAddress }}",
+                stdout=asyncio.subprocess.PIPE,
+                stderr=asyncio.subprocess.PIPE,
+            )
+            composer_ip = (await composer_inspect.stdout.readline()).decode().strip()
+            await composer_inspect.wait()
 
-        cli = await asyncio.create_subprocess_exec(
-            "podman",
-            "run",
-            "--rm",
-            "--volume", f"{path_config}:/etc/osbuild-composer:ro,z",
-            "--volume", f"{path_tmp}/weldr:/run/weldr:rw,z",
-            "--volume", f"{path_tmp}/dnf-json:/run/osbuild-dnf-json:rw,z",
-            "--network", "podman",
-            "--add-host", f"composer:{composer_ip}",
-            "--name", f"{prefix}-cli",
-            "-it",
-            f"ogsc/run/cli:{weldr_client_version}",
-            "/bin/bash",
-        )
+            print(f"run.py: env: `composer` container has ip {composer_ip!r}")
+            print(f"run.py: env: starting `worker` container at {osbuild_composer_version!r} (using osbuild {osbuild_version!r})")
 
-        await cli.wait()
+            worker = await asyncio.create_subprocess_exec(
+                "podman",
+                "run",
+                "--rm",
+                "--privileged",
+                "--volume", f"{path_config}:/etc/osbuild-composer:ro,z",
+                "--volume", f"{path_run}:/run/osbuild:rw,z",
+                "--volume", f"{path_cache}:/var/cache/osbuild-worker:rw,z",
+                "--volume", f"/dev:/dev,z",
+                "--network", "podman",
+                "--add-host", f"composer:{composer_ip}",
+                "--name", f"{prefix}-worker",
+                "--env", "CACHE_DIRECTORY=/var/cache/osbuild-worker",
+                f"ogsc/run/worker:{osbuild_composer_version}_{osbuild_version}",
+                "composer:8700",
+                stdout=worker_stdout,
+                stderr=worker_stderr,
+            )
+            await asyncio.sleep(5)
 
-        await asyncio.gather(stop(composer), stop(worker))
+            print(f"run.py: env: starting `cli` container at {weldr_client_version!r}")
+            print(f"\nrun.py: env: Welcome to osbuild! You can now use `composer-cli` to build images")
+            print(f"run.py: env: … and `exit` afterwards")
+
+            cli = await asyncio.create_subprocess_exec(
+                "podman",
+                "run",
+                "--rm",
+                "--volume", f"{path_config}:/etc/osbuild-composer:ro,z",
+                "--volume", f"{path_tmp}/weldr:/run/weldr:rw,z",
+                "--volume", f"{path_tmp}/dnf-json:/run/osbuild-dnf-json:rw,z",
+                "--network", "podman",
+                "--add-host", f"composer:{composer_ip}",
+                "--name", f"{prefix}-cli",
+                "-it",
+                f"ogsc/run/cli:{weldr_client_version}",
+                "/bin/bash",
+            )
+
+            await cli.wait()
+
+            await asyncio.gather(stop(composer), stop(worker))
+        print("\nLogs are here")
+        print(path_tmp)
+        for line in tree(Path(path_tmp)):
+            print(line)
+        print("Inspect them now, then press [ENTER] to remove them")
+        input()
 
     return 0
 

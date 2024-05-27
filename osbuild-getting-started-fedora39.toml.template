@@ -1,0 +1,155 @@
+name = "osbuild-getting-started-fedora-39"
+distro = "fedora-39"
+version = "0.0.5"
+
+# CUDACXX=/usr/local/cuda-12/bin/nvcc CMAKE_ARGS="-DLLAMA_CUBLAS=on -DCMAKE_CUDA_ARCHITECTURES=native" pip install --force-reinstall --no-cache-dir llama-cpp-python
+
+packages = [
+    { name = "bash-completion" },
+    { name = "btrfs-progs-devel" },
+    { name = "cmake" },
+    { name = "cryptsetup" },
+    { name = "delve" },
+    { name = "device-mapper-devel" },
+    { name = "device-mapper-devel" },
+    { name = "device-mapper-libs" },
+    { name = "g++" },
+    { name = "gdisk" },
+    { name = "git" },
+    { name = "golang" },
+    { name = "gpgme" },
+    { name = "gpgme-devel" },
+    { name = "libassuan" },
+    { name = "libassuan-devel" },
+    { name = "openssh-server" },
+    { name = "ostree" },
+    { name = "podman" },
+    { name = "policycoreutils-python-utils" },
+    { name = "procps-ng" },
+    { name = "python3-devel" },
+    { name = "python3-dnf" },
+    { name = "python3-docutils" },
+    { name = "python3-pip" },
+    { name = "python3-rich" },
+    { name = "python3-tomli" },
+    { name = "python3-typer" },
+    { name = "python3.11" },
+    { name = "qemu-img" },
+    { name = "rpm-build" },
+    { name = "rpm-ostree" },
+    { name = "rsync" },
+    { name = "selinux-policy-devel" },
+    { name = "skopeo" },
+    { name = "tmux" },
+    { name = "vim" },
+  ]
+
+[customizations]
+hostname = "osbuild-getting-started-vm"
+
+[[customizations.filesystem]]
+mountpoint = "/"
+# 10GB
+minsize = 10737418240
+# 20GB
+#minsize = 21474836480
+# 25GB
+#minsize = 26843545600
+# 50GB
+#minsize = 53687091200
+
+[customizations.locale]
+languages = ["en_US.UTF-8"]
+keyboard = "de"
+
+[customizations.timezone]
+timezone = "Europe/Vienna"
+
+[customizations.services]
+enabled = ["firstboot-tasks"]
+
+[[customizations.files]]
+path = "/etc/systemd/system/firstboot-tasks.service"
+data = """[Unit]
+Description=Do all kinds of firstboot tasks
+ConditionPathExists=/etc/firstboot-tasks.touch
+Wants=network-online.target
+After=network-online.target
+
+[Service]
+Type=oneshot
+User=root
+
+ExecStart=/bin/bash -c 'echo "host_data  /workspaces  virtiofs defaults,user 0 0" | tee -a /etc/fstab'
+ExecStart=/bin/bash -c 'echo "host_go_cache  /home/osbuild/go  virtiofs defaults,user 0 0" | tee -a /etc/fstab'
+ExecStart=/usr/bin/systemctl daemon-reload
+ExecStart=/usr/bin/mount /workspaces
+ExecStart=/usr/bin/mount /home/osbuild/go
+
+ExecStart=/bin/bash -c 'echo "cd /workspaces" >> /home/osbuild/.bashrc'
+
+ExecStart=/usr/bin/rm /etc/firstboot-tasks.touch
+
+[Install]
+WantedBy=multi-user.target
+"""
+
+# Indicate that we never did firstboot tasks
+[[customizations.files]]
+path = "/etc/firstboot-tasks.touch"
+data = """ Trigger to firstboot tasks - file is removed after first run
+"""
+
+[[customizations.directories]]
+path = "/home/osbuild/go"
+mode = "0755"
+user = "osbuild"
+group = "osbuild"
+
+[[customizations.directories]]
+path = "/workspaces"
+mode = "0755"
+user = "osbuild"
+group = "osbuild"
+
+[[customizations.files]]
+path = "/workspaces/init.sh"
+data = """#!/usr/bin/bash
+# This should be hidden by mounting your local host directory
+# but it's also possible to get all the sources in the VM
+git clone git@github.com:osbuild/community-gateway.git
+git clone git@github.com:osbuild/image-builder-frontend.git
+git clone git@github.com:osbuild/image-builder.git
+git clone git@github.com:osbuild/images.git
+git clone git@github.com:osbuild/osbuild-composer.git
+git clone git@github.com:osbuild/osbuild-getting-started.git
+git clone git@github.com:osbuild/osbuild.git
+git clone git@github.com:osbuild/pulp-client.git
+"""
+
+# no password needed for sudo
+[[customizations.files]]
+path = "/etc/sudoers.d/%wheel"
+data = """%wheel  ALL=(ALL)       NOPASSWD: ALL
+"""
+
+[[customizations.sshkey]]
+user = "root"
+key = "REPLACEME_KEY_ROOT"
+
+[[customizations.group]]
+name = "osbuild"
+gid = 1000
+
+[[customizations.user]]
+name = "osbuild"
+description = "Administrator account and runner for the containers"
+password = "REPLACEME_PASSWORD_USER"
+key = "REPLACEME_KEY_USER"
+home = "/home/osbuild"
+shell = "/bin/bash"
+groups = [ "users", "wheel"]
+uid = 1000
+gid = 1000
+
+
