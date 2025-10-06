@@ -1,0 +1,42 @@
+MAKEFILE_PATH := $(abspath $(lastword $(MAKEFILE_LIST)))
+GETTING_STARTED_DIR := $(patsubst %/,%,$(dir $(MAKEFILE_PATH))../../)
+SRC_DEPS_EXTERNAL_CHECKOUT_DIR ?= $(GETTING_STARTED_DIR)/..
+
+IMAGE_BUILDER_FRONTEND_DIR ?= $(SRC_DEPS_EXTERNAL_CHECKOUT_DIR)/image-builder-frontend
+
+.ONESHELL:
+SHELL := /bin/bash
+.SHELLFLAGS := -ec -o pipefail
+
+include $(IMAGE_BUILDER_FRONTEND_DIR)/Makefile
+
+export CONTAINER_EXECUTABLE ?= podman
+
+DOCKER_IMAGE := image-builder-frontend_dev
+DOCKERFILE := $(GETTING_STARTED_DIR)/repos/image-builder-frontend/tools/Dockerfile.dev
+
+# All files to check for rebuild!
+SRC_DEPS := $(shell find $(IMAGE_BUILDER_FRONTEND_DIR) -not -path './node_modules/*' \
+                           -not -path './dist/*' \
+                           -not -path './coverage/*' \
+                           \( -name "*.ts" \
+                           -or -name "*.tsx" \
+                           -or -name "*.yml" \
+                           -or -name "*.yaml" \
+                           -or -name "*.json" \
+                           -or -name "*.js" \) )
+
+clean.dev: clean
+	rm -f container_built.info
+
+container_built.info: $(DOCKERFILE) $(SRC_DEPS)
+	$(CONTAINER_EXECUTABLE) build \
+      -t $(DOCKER_IMAGE) \
+      -f $(DOCKERFILE) \
+      $(SRC_DEPS_EXTERNAL_CHECKOUT_DIR) \
+      --build-arg BUILD_DATE=$(shell date +%Y%m%d_%H%M%S)
+	echo "Container last built on" > $@
+	date >> $@
+
+.PHONY: container.dev
+container.dev: container_built.info ## build a container with the frontend

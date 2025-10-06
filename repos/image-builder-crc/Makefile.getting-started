@@ -1,0 +1,63 @@
+MAKEFILE_PATH := $(abspath $(lastword $(MAKEFILE_LIST)))
+GETTING_STARTED_DIR := $(patsubst %/,%,$(dir $(MAKEFILE_PATH))../../)
+SRC_DEPS_EXTERNAL_CHECKOUT_DIR ?= $(GETTING_STARTED_DIR)/..
+
+IMAGE_BUILDER_CRC_DIR ?= $(SRC_DEPS_EXTERNAL_CHECKOUT_DIR)/image-builder-crc
+
+.ONESHELL:
+SHELL := /bin/bash
+.SHELLFLAGS := -ec -o pipefail
+
+include $(IMAGE_BUILDER_CRC_DIR)/Makefile
+
+export CONTAINER_EXECUTABLE ?= podman
+
+DOCKER_IMAGE := image-builder-crc_dev
+DOCKERFILE := $(GETTING_STARTED_DIR)/repos/image-builder-crc/tools/Dockerfile-ubi.dev
+
+SRC_DEPS_EXTERNAL_NAMES := community-gateway osbuild-composer
+SRC_DEPS_EXTERNAL_DIRS := $(addprefix $(SRC_DEPS_EXTERNAL_CHECKOUT_DIR)/,$(SRC_DEPS_EXTERNAL_NAMES))
+
+SRC_DEPS_NAMES := internal cmd
+SRC_DEPS_DIRS := $(addprefix $(IMAGE_BUILDER_CRC_DIR)/,$(SRC_DEPS_NAMES))
+
+# All files to check for rebuild!
+SRC_DEPS := $(shell find $(SRC_DEPS_DIRS) -name *.go -or -name *.sql)
+SRC_DEPS_EXTERNAL := $(shell find $(SRC_DEPS_EXTERNAL_DIRS) -name *.go)
+
+CONTAINER_DEPS := $(GETTING_STARTED_DIR)/repos/image-builder-crc/tools/openshift-startup.sh
+
+$(SRC_DEPS_EXTERNAL_DIRS):
+	@for DIR in $@; do if ! [ -d $$DIR ]; then echo "Please checkout $$DIR so it is available at $$DIR"; exit 1; fi; done
+
+GOPROXY ?= https://proxy.golang.org,direct
+
+GOMODARGS ?= -modfile=go.local.mod
+# gcflags "-N -l" for golang to allow debugging
+GCFLAGS ?= -gcflags=all=-N -gcflags=all=-l
+GOPATH ?= $(shell go env GOPATH)
+
+go.local.mod go.local.sum: $(SRC_DEPS_EXTERNAL_DIRS) go.mod $(SRC_DEPS_EXTERNAL) $(SRC_DEPS)
+	cp go.mod go.local.mod
+	cp go.sum go.local.sum
+	go mod edit $(GOMODARGS) -replace github.com/osbuild/osbuild-composer/pkg/splunk_logger=$(SRC_DEPS_EXTERNAL_CHECKOUT_DIR)/osbuild-composer/pkg/splunk_logger
+	go mod edit $(GOMODARGS) -replace github.com/osbuild/community-gateway=$(SRC_DEPS_EXTERNAL_CHECKOUT_DIR)/community-gateway
+	env GOPROXY=$(GOPROXY) go mod vendor $(GOMODARGS)
+
+container_built.info: go.local.mod $(DOCKERFILE) $(CONTAINER_DEPS) $(SRC_DEPS)
+	$(CONTAINER_EXECUTABLE) build \
+	  -t $(DOCKER_IMAGE) \
+	  -f $(DOCKERFILE) \
+	  --build-arg GOMODARGS="$(GOMODARGS)" \
+	  --build-arg GCFLAGS="$(GCFLAGS)" \
+	  $(SRC_DEPS_EXTERNAL_CHECKOUT_DIR)
+	echo "Container last built on" > $@
+	date >> $@
+
+.PHONY: container.dev
+container.dev: container_built.info
+
+.PHONY: clean.dev
+clean.dev: clean
+	rm -f container_built.info
+	rm -f go.local.*

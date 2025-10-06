@@ -1,0 +1,36 @@
+FROM registry.fedoraproject.org/fedora:latest
+
+ARG OSBUILD_DIR=osbuild
+ENV OSBUILD_DIR=${OSBUILD_DIR}
+
+ARG GETTING_STARTED_DIR=osbuild-getting-started
+ENV GETTING_STARTED_DIR=${GETTING_STARTED_DIR}
+
+RUN dnf install -y @rpm-development-tools git
+
+RUN mkdir /prepare
+WORKDIR /prepare
+
+COPY ${OSBUILD_DIR}/osbuild.spec .
+
+RUN dnf -y builddep ./osbuild.spec
+
+RUN pip install pydevd_pycharm debugpy
+
+RUN mkdir /app
+WORKDIR /app
+
+COPY ${GETTING_STARTED_DIR}/repos/osbuild/Makefile.getting-started Makefile.getting-started
+
+COPY ${OSBUILD_DIR} /app
+
+COPY ${GETTING_STARTED_DIR}/repos/osbuild/tools/main_cli_dev.py /app/osbuild/
+COPY ${GETTING_STARTED_DIR}/repos/osbuild/tools/Containerfile.dev.patch /app/tools/
+RUN git apply tools/Containerfile.dev.patch
+
+# OSBUILD_DIR is different in the container than on the host
+RUN OSBUILD_DIR=/app make -f Makefile.getting-started rpm.dev
+
+RUN dnf install -y ./rpmbuild/RPMS/*.rpm
+
+ENTRYPOINT [ "/usr/bin/osbuild" ]

@@ -1,0 +1,36 @@
+### builder stage
+FROM registry.fedoraproject.org/fedora:latest AS builder
+ENV GOBIN=/opt/app-root/src/go/bin
+
+RUN dnf install -y gpgme-devel libassuan-devel device-mapper-devel golang
+
+
+ARG OSBUILD_COMPOSER_DIR=osbuild-composer
+ENV OSBUILD_COMPOSER_DIR=$OSBUILD_COMPOSER_DIR
+
+WORKDIR /osbuild-composer
+COPY ${OSBUILD_COMPOSER_DIR} /osbuild-composer
+ENV GOFLAGS=-mod=vendor
+
+ARG GOPROXY=https://proxy.golang.org,direct
+RUN go env -w GOPROXY=$GOPROXY
+
+ARG GOMODARGS=""
+
+RUN go install $GOMODARGS ./cmd/osbuild-mock-openid-provider/
+
+### final stage
+FROM registry.access.redhat.com/ubi9/ubi-minimal:latest
+
+ARG OSBUILD_COMPOSER_DIR=osbuild-composer
+ENV OSBUILD_COMPOSER_DIR=$OSBUILD_COMPOSER_DIR
+
+RUN microdnf install -y python3
+RUN mkdir -p "/usr/libexec/osbuild-composer"
+RUN mkdir -p "/etc/osbuild-composer/"
+
+COPY --from=builder /opt/app-root/src/go/bin/osbuild-mock-openid-provider /usr/libexec/osbuild-composer/
+COPY ${OSBUILD_COMPOSER_DIR}/containers/fauxauth/fauxauth.py /opt/fauxauth.py
+
+EXPOSE 8080 8080
+ENTRYPOINT "/opt/fauxauth.py"

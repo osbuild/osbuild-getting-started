@@ -1,4 +1,13 @@
 #!/bin/bash
+
+if [ -f /config ] ; then
+  echo "ERROR: /config should not be a file. Your setup seems to be broken!"
+  echo "Please check your volume mounts of the container runtime (podman/docker)"
+  exit 1
+fi
+
+ls -la /config/
+
 if (( $# != 3 )); then
     echo "Usage: $0 <openssl-config> <certdir> <cadir>"
     echo

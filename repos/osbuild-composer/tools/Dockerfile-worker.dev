@@ -1,0 +1,45 @@
+FROM registry.fedoraproject.org/fedora:latest AS builder
+ENV GOBIN=/opt/app-root/src/go/bin
+
+ARG OSBUILD_COMPOSER_DIR=osbuild-composer
+ENV OSBUILD_COMPOSER_DIR=${OSBUILD_COMPOSER_DIR}
+
+ARG GETTING_STARTED_DIR=osbuild-getting-started
+ENV GETTING_STARTED_DIR=${GETTING_STARTED_DIR}
+
+# extra packages are needed
+# to compile osbuild
+RUN dnf install -y golang \
+  krb5-devel \
+  gpgme-devel \
+  libassuan-devel
+
+ARG USE_BTRFS=no
+RUN if [[ "$USE_BTRFS" == "yes" ]]; then dnf install -y btrfs-progs-devel device-mapper-devel; fi
+
+WORKDIR /osbuild-composer
+COPY ${OSBUILD_COMPOSER_DIR} /osbuild-composer
+ENV GOFLAGS=-mod=vendor
+
+ARG GOPROXY=https://proxy.golang.org,direct
+RUN go env -w GOPROXY=$GOPROXY
+
+ARG GOMODARGS=""
+ARG GCFLAGS=""
+
+RUN go install $GOMODARGS $GCFLAGS ./cmd/osbuild-worker
+
+FROM osbuild_dev
+
+RUN dnf install -y delve
+
+RUN mkdir -p "/usr/libexec/osbuild-composer"
+RUN mkdir -p "/etc/osbuild-composer/"
+RUN mkdir -p "/run/osbuild-composer/"
+RUN mkdir -p "/var/cache/osbuild-worker/"
+RUN mkdir -p "/var/lib/osbuild-composer/"
+RUN mkdir -p "/var/cache/osbuild-composer/output"
+COPY --from=builder /opt/app-root/src/go/bin/osbuild-worker /usr/libexec/osbuild-composer/
+COPY ${GETTING_STARTED_DIR}/repos/osbuild-composer/tools/osbuild-worker-entrypoint.sh /usr/libexec/osbuild-composer/
+
+ENTRYPOINT ["/usr/libexec/osbuild-composer/osbuild-worker-entrypoint.sh"]

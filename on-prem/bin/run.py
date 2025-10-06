@@ -93,7 +93,6 @@ async def env(
                 "--network", "podman",
                 "--name", f"{prefix}-composer",
                 f"ogsc/run/composer:{osbuild_composer_version}",
-                "--dnf-json",
                 "--weldr-api",
                 "--remote-worker-api",
                 "--composer-api",

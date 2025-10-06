@@ -1,0 +1,72 @@
+
+MAKEFILE_PATH := $(abspath $(lastword $(MAKEFILE_LIST)))
+GETTING_STARTED_DIR := $(dir $(MAKEFILE_PATH))../..
+SRC_DEPS_EXTERNAL_CHECKOUT_DIR ?= $(GETTING_STARTED_DIR)/..
+
+OSBUILD_DIR ?= $(SRC_DEPS_EXTERNAL_CHECKOUT_DIR)/osbuild
+
+include $(OSBUILD_DIR)/Makefile
+
+# List of all files which trigger a rebuild of the
+# development targets and container
+
+# Directories to search
+SRC_DEPS_DIRS := assemblers devices inputs mounts osbuild runners sources stages tools
+
+# Function to search for Python files in a directory
+define find_python_files
+$(shell find $(1) -type f -exec file {} \; | grep "Python script" | grep -Eo "^[^:]+")
+endef
+
+# All files to check for rebuild!
+SRC_DEPS := $(shell find $(OSBUILD_DIR) -name "*.py") \
+       $(foreach dir,$(SRC_DEPS_DIRS),$(call find_python_files,$(OSBUILD_DIR)/$(dir))) \
+       $(shell find $(OSBUILD_DIR)/schemas -name "*.json")
+
+CONTAINER_EXECUTABLE ?= podman
+CONTAINER_IMAGE := osbuild_dev
+CONTAINERFILE := $(GETTING_STARTED_DIR)/repos/osbuild/tools/Containerfile.dev
+
+RPM_SPECFILE_DEV=$(OSBUILD_DIR)/rpmbuild/SPECS/osbuild-SRC.spec
+
+# building rpm for development with a constant name
+# to avoid any semblance to a "release rpm"
+$(RPM_SPECFILE_DEV): osbuild.spec
+	mkdir -p $(OSBUILD_DIR)/rpmbuild/SPECS
+	echo "%global commit SRC" > $@
+	echo "%define _rpmfilename %%{NAME}.rpm" >> $@
+	echo "%global source_date_epoch_from_changelog 1" >> $@
+	echo "%global clamp_mtime_to_source_date_epoch 1" >> $@
+	cat $< >> $@
+
+RPM_DEV_FILES := osbuild.rpm \
+                 osbuild-depsolve-dnf.rpm \
+                 osbuild-luks2.rpm \
+                 osbuild-ostree.rpm \
+                 osbuild-selinux.rpm \
+                 osbuild-tools.rpm \
+                 python3-osbuild.rpm
+
+RPM_DEV := $(addprefix $(OSBUILD_DIR)/rpmbuild/RPMS/,$(RPM_DEV_FILES))
+
+.PHONY: rpm.dev
+rpm.dev: $(RPM_DEV)
+
+$(RPM_DEV): $(RPM_SPECFILE_DEV) $(SRC_DEPS)
+	export SOURCE_DATE_EPOCH=$(shell stat -c %Y $(RPM_SPECFILE_DEV))
+	rpmbuild -bb --build-in-place \
+		--define "_topdir $(OSBUILD_DIR)/rpmbuild" \
+		$(RPM_SPECFILE_DEV)
+
+clean.dev: clean
+	rm -rf $(OSBUILD_DIR)/rpmbuild
+	rm -f $(OSBUILD_DIR)/container_built.info
+
+
+container_built.info: $(CONTAINERFILE) osbuild.spec $(SRC_DEPS)
+	$(CONTAINER_EXECUTABLE) build -t $(CONTAINER_IMAGE) -f $(CONTAINERFILE) $(SRC_DEPS_EXTERNAL_CHECKOUT_DIR)
+	echo "Container last built on" > $@
+	date >> $@
+
+.PHONY: container.dev
+container.dev: container_built.info
